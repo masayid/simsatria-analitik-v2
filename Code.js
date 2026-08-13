@@ -1,10 +1,8 @@
-/**
- * SIM SATRIA Multi Sekolah - entry point.
- */
+/** Entry point SIM SATRIA Multi Sekolah. */
 function doGet() {
-  return HtmlService.createTemplateFromFile('index')
+  return HtmlService.createTemplateFromFile('ui/index')
     .evaluate()
-    .setTitle(SATRIA_CONFIG.APP_NAME)
+    .setTitle(APP_CONFIG.NAME + ' v' + APP_CONFIG.VERSION)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
