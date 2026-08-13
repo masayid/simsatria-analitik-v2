@@ -3,27 +3,21 @@ let SATRIA_SESSION = null;
 
 function loadSession() {
   showLoading(true);
-  google.script.run
-    .withSuccessHandler(renderSession)
-    .withFailureHandler(showSessionError)
-    .getSessionContext();
+  google.script.run.withSuccessHandler(renderSession).withFailureHandler(showSessionError).getSessionContext();
 }
 
 function renderSession(response) {
   showLoading(false);
   if (!response || !response.ok) return showSessionError({message: response && response.message ? response.message : 'Sesi tidak valid.'});
-
   SATRIA_SESSION = response.data;
   const user = SATRIA_SESSION.user;
   const school = SATRIA_SESSION.school;
-
   document.getElementById('welcomeTitle').textContent = 'Selamat datang, ' + user.nama;
   document.getElementById('sessionInfo').textContent = user.email + ' • ' + user.role;
   document.getElementById('schoolInfo').innerHTML = '<strong>' + escapeHtml(school.namaSekolah) + '</strong><br>NPSN: ' + escapeHtml(school.npsn) + ' • ID: ' + escapeHtml(school.idSekolah);
   document.getElementById('headerUser').textContent = user.nama + ' • ' + user.role;
-
   renderMenus(SATRIA_SESSION.menus || []);
-  renderPermissions();
+  renderPermissions(SATRIA_SESSION.permissions || []);
 }
 
 function renderMenus(menus) {
@@ -39,23 +33,11 @@ function renderMenus(menus) {
   });
 }
 
-function renderPermissions() {
+function renderPermissions(permissions) {
   const box = document.getElementById('permissionGrid');
-  const labels = [
-    ['READ','Baca'],['INPUT','Input/Simpan'],['UPLOAD','Upload'],['PDF','PDF'],['ADMIN','Administrasi']
-  ];
-  box.innerHTML = labels.map(([code,label]) => {
-    const allowed = (SATRIA_SESSION.menus || []).some(menu => {
-      return hasMenuPermission(menu.kode_menu, code);
-    });
-    return '<div class="permission-card ' + (allowed ? 'allowed' : 'blocked') + '"><b>' + code + '</b><span>' + label + '</span><strong>' + (allowed ? '✓' : '—') + '</strong></div>';
-  }).join('');
-}
-
-function hasMenuPermission(menuCode, permission) {
-  // Context menu hanya memuat menu yang boleh diakses.
-  // Detail permission diambil server-side saat operasi dijalankan.
-  return (permission === 'READ') || (permission !== 'ADMIN' && !!SATRIA_SESSION);
+  const labels = [['READ','Baca'],['INPUT','Input/Simpan'],['UPLOAD','Upload'],['PDF','PDF'],['ADMIN','Administrasi']];
+  const allowed = new Set(permissions.map(p => String(p).toUpperCase()));
+  box.innerHTML = labels.map(([code,label]) => '<div class="permission-card ' + (allowed.has(code) ? 'allowed' : 'blocked') + '"><b>' + code + '</b><span>' + label + '</span><strong>' + (allowed.has(code) ? '✓' : '—') + '</strong></div>').join('');
 }
 
 function selectMenu(menuCode) {
@@ -79,9 +61,7 @@ function showLoading(show) {
 }
 
 function escapeHtml(value) {
-  return String(value == null ? '' : value)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  return String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
 window.addEventListener('load', loadSession);
