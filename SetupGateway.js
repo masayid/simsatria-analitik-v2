@@ -110,3 +110,70 @@ function setup18_testGatewayUpload() {
     fileUrl: result.url || ''
   }, 'TEST UPLOAD berhasil melalui Write Gateway.');
 }
+
+/**
+ * TAHAP 7.4 — Test PDF melalui Write Gateway.
+ * Membuat PDF uji sederhana dan menyimpannya ke folder Drive sekolah.
+ */
+function setup19_testGatewayPDF() {
+  const menu = SETUP_CONFIG.MENU_UJI.kode_menu;
+  const schoolId = clean_(SETUP_CONFIG.SEKOLAH.id_sekolah).toUpperCase();
+  const email = Session.getActiveUser().getEmail() || '';
+  const timestamp = new Date();
+
+  const stamp = Utilities.formatDate(
+    timestamp,
+    Session.getScriptTimeZone(),
+    'yyyyMMdd_HHmmss'
+  );
+
+  const fileName = 'TEST_GATEWAY_PDF_' + stamp;
+
+  const html = [
+    '<!DOCTYPE html>',
+    '<html>',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<style>',
+    'body{font-family:Arial,sans-serif;padding:36px;color:#222}',
+    'h1{font-size:22px;margin-bottom:20px}',
+    'table{border-collapse:collapse;width:100%}',
+    'td{border:1px solid #ccc;padding:8px}',
+    '.label{font-weight:bold;width:180px}',
+    '</style>',
+    '</head>',
+    '<body>',
+    '<h1>SIM SATRIA — TEST WRITE GATEWAY PDF</h1>',
+    '<table>',
+    '<tr><td class="label">Status</td><td>OK</td></tr>',
+    '<tr><td class="label">Sekolah</td><td>' + escapeHtml_(schoolId) + '</td></tr>',
+    '<tr><td class="label">User</td><td>' + escapeHtml_(email) + '</td></tr>',
+    '<tr><td class="label">Waktu</td><td>' + escapeHtml_(timestamp.toISOString()) + '</td></tr>',
+    '</table>',
+    '</body>',
+    '</html>'
+  ].join('');
+
+  const result = pdfViaGateway(menu, {
+    name: fileName,
+    html: html
+  });
+
+  return ok_({
+    action: 'PDF_CREATE',
+    schoolId: schoolId,
+    fileId: result.id || '',
+    fileName: result.name || (fileName + '.pdf'),
+    fileUrl: result.url || ''
+  }, 'TEST PDF berhasil melalui Write Gateway.');
+}
+
+/** Escape minimal untuk data diagnostik yang dimasukkan ke HTML. */
+function escapeHtml_(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
