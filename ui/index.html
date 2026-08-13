@@ -1,1 +1,36 @@
-<!doctype html><html lang="id"><head><base target="_top"><?!= include('ui/css'); ?></head><body><div id="app"><div id="header"><?!= include('ui/header'); ?></div><div class="layout"><aside id="sidebar"><?!= include('ui/sidebar'); ?></aside><main id="content"><div id="loading"><?!= include('ui/loading'); ?></div><h5>SIM SATRIA Multi Sekolah</h5><p id="sessionInfo">Memuat sesi...</p></main></div><?!= include('ui/modal'); ?><?!= include('ui/js'); ?></body></html>
+<!doctype html>
+<html lang="id">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <?!= include('ui/css'); ?>
+</head>
+<body>
+  <div id="app">
+    <div id="header"><?!= include('ui/header'); ?></div>
+    <div class="layout">
+      <aside id="sidebar"><?!= include('ui/sidebar'); ?></aside>
+      <main id="content">
+        <?!= include('ui/loading'); ?>
+        <section id="welcome" class="card">
+          <div class="card-body">
+            <div class="eyebrow">SIM SATRIA MULTI SEKOLAH</div>
+            <h2 id="welcomeTitle">Memuat sesi...</h2>
+            <p id="sessionInfo">Mengidentifikasi akun dan role.</p>
+            <div id="schoolInfo" class="school-box"></div>
+          </div>
+        </section>
+        <section class="card">
+          <div class="card-body">
+            <h5>Akses Aplikasi</h5>
+            <div id="permissionGrid" class="permission-grid"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <?!= include('ui/modal'); ?>
+  </div>
+  <?!= include('ui/js'); ?>
+</body>
+</html>
