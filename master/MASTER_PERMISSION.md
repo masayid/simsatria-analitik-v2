@@ -1,4 +1,11 @@
 # MASTER_PERMISSION
-Permission operasi aplikasi: `READ`, `INPUT`, `UPLOAD`, `PDF`, `ADMIN`.
 
-Permission diperiksa oleh Apps Script sebelum operasi dijalankan.
+Permission aplikasi:
+
+- `READ` — membaca data
+- `INPUT` — input/simpan data
+- `UPLOAD` — upload file ke Drive melalui gateway
+- `PDF` — membuat/generate PDF
+- `ADMIN` — administrasi
+
+Permission aplikasi **tidak identik** dengan Editor/Viewer Google Spreadsheet atau Drive.
