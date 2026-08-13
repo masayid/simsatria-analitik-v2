@@ -1,12 +1,13 @@
 /**
  * KONFIGURASI UTAMA SIM SATRIA MULTI SEKOLAH.
- * Semua ID/URL sensitif sebaiknya disimpan di Script Properties.
+ * ID/URL/token disimpan di Script Properties, bukan di source code.
  */
 const APP_CONFIG = Object.freeze({
   NAME: 'SIM SATRIA Multi Sekolah',
-  VERSION: '2.0.0',
+  VERSION: '2.1.0',
   TIMEZONE: 'Asia/Jakarta',
   PROP: {
+    MASTER_SPREADSHEET_ID: 'MASTER_SPREADSHEET_ID',
     SCHOOL_ID: 'SAT_schoolId',
     GATEWAY_URL: 'SAT_gatewayUrl',
     GATEWAY_TOKEN: 'SAT_gatewayToken'
