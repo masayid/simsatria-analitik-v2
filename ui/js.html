@@ -1,0 +1,1 @@
+<script>function loadSession(){google.script.run.withSuccessHandler(r=>{document.getElementById('sessionInfo').textContent=r.ok?JSON.stringify(r.data):r.message}).withFailureHandler(e=>{document.getElementById('sessionInfo').textContent=e.message}).getSessionContext()}window.addEventListener('load',loadSession);</script>
