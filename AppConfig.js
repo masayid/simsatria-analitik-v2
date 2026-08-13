@@ -4,10 +4,11 @@
  */
 const APP_CONFIG = Object.freeze({
   NAME: 'SIM SATRIA Multi Sekolah',
-  VERSION: '2.1.0',
+  VERSION: '2.2.0',
   TIMEZONE: 'Asia/Jakarta',
   PROP: {
     MASTER_SPREADSHEET_ID: 'MASTER_SPREADSHEET_ID',
+    SETUP_OWNER_EMAIL: 'SETUP_OWNER_EMAIL',
     SCHOOL_ID: 'SAT_schoolId',
     GATEWAY_URL: 'SAT_gatewayUrl',
     GATEWAY_TOKEN: 'SAT_gatewayToken'
@@ -25,5 +26,9 @@ const APP_CONFIG = Object.freeze({
     UPLOAD: 'UPLOAD',
     PDF: 'PDF',
     ADMIN: 'ADMIN'
+  },
+  STATUS: {
+    ACTIVE: 'ACTIVE',
+    INACTIVE: 'INACTIVE'
   }
 });
