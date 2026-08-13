@@ -1,0 +1,11 @@
+/** Role definitions - scaffold. */
+const SATRIA_ROLES = {
+  SUPERADMIN: 'SUPERADMIN',
+  ADMIN: 'ADMIN',
+  KEPALA_SEKOLAH: 'KEPALA_SEKOLAH',
+  WAKASEK: 'WAKASEK',
+  GURU: 'GURU',
+  WALI_KELAS: 'WALI_KELAS',
+  KARYAWAN: 'KARYAWAN',
+  SISWA: 'SISWA'
+};
