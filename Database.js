@@ -1,11 +1,7 @@
 /** Database registry pusat untuk MASTER_*. */
 const MASTER = Object.freeze({
-  SEKOLAH: 'MASTER_SEKOLAH',
-  USER: 'MASTER_USER',
-  ROLE: 'MASTER_ROLE',
-  PERMISSION: 'MASTER_PERMISSION',
-  ROLE_PERMISSION: 'MASTER_ROLE_PERMISSION',
-  MENU: 'MASTER_MENU'
+  SEKOLAH: 'MASTER_SEKOLAH', USER: 'MASTER_USER', ROLE: 'MASTER_ROLE',
+  PERMISSION: 'MASTER_PERMISSION', ROLE_PERMISSION: 'MASTER_ROLE_PERMISSION', MENU: 'MASTER_MENU'
 });
 
 const MASTER_HEADERS = Object.freeze({
@@ -29,8 +25,7 @@ function readSheetObjects_(ss, sheetName) {
   const values = sh.getDataRange().getValues();
   if (!values.length) return [];
   const headers = values.shift().map(clean_);
-  return values
-    .filter(row => row.some(value => clean_(value)))
+  return values.filter(row => row.some(value => clean_(value)))
     .map(row => Object.fromEntries(headers.map((header, i) => [header, row[i]])));
 }
 
@@ -62,12 +57,13 @@ function getMenusForRole_(role) {
   const menus = readSheetObjects_(ss, MASTER.MENU).filter(row => clean_(row.aktif).toUpperCase() !== 'FALSE');
   const permissions = readSheetObjects_(ss, MASTER.ROLE_PERMISSION)
     .filter(row => clean_(row.role).toUpperCase() === roleCode && clean_(row.aktif).toUpperCase() !== 'FALSE');
-  const allowed = new Set(permissions.map(row => clean_(row.kode_menu).toUpperCase()));
-  return menus.filter(row => allowed.has(clean_(row.kode_menu).toUpperCase()))
+  const readableMenus = new Set(permissions
+    .filter(row => clean_(row.permission).toUpperCase() === APP_CONFIG.PERMISSION.READ)
+    .map(row => clean_(row.kode_menu).toUpperCase()));
+  return menus.filter(row => readableMenus.has(clean_(row.kode_menu).toUpperCase()))
     .sort((a,b) => Number(a.urutan || 0) - Number(b.urutan || 0));
 }
 
-/** Jalankan sekali oleh owner setelah MASTER_SPREADSHEET_ID diset. */
 function initializeMaster_() {
   const ss = getMasterSpreadsheet_();
   Object.keys(MASTER_HEADERS).forEach(sheetName => {
@@ -86,29 +82,20 @@ function seedMaster_(ss) {
   const rpSh = ss.getSheetByName(MASTER.ROLE_PERMISSION);
   const menuSh = ss.getSheetByName(MASTER.MENU);
 
-  if (roleSh.getLastRow() === 1) {
-    roleSh.getRange(2,1,5,5).setValues([
-      ['R01','ADMIN_SEKOLAH','Administrator Sekolah','Editor storage + seluruh operasi aplikasi','ACTIVE'],
-      ['R02','GURU','Guru','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE'],
-      ['R03','WALI_KELAS','Wali Kelas','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE'],
-      ['R04','KARYAWAN','Karyawan','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE'],
-      ['R05','SISWA','Siswa','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE']
-    ]);
-  }
+  if (roleSh.getLastRow() === 1) roleSh.getRange(2,1,5,5).setValues([
+    ['R01','ADMIN_SEKOLAH','Administrator Sekolah','Editor storage + seluruh operasi aplikasi','ACTIVE'],
+    ['R02','GURU','Guru','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE'],
+    ['R03','WALI_KELAS','Wali Kelas','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE'],
+    ['R04','KARYAWAN','Karyawan','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE'],
+    ['R05','SISWA','Siswa','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE']
+  ]);
 
-  if (permSh.getLastRow() === 1) {
-    permSh.getRange(2,1,5,4).setValues([
-      ['P01','READ','Baca','Membaca data'],
-      ['P02','INPUT','Input/Simpan','Menyimpan data'],
-      ['P03','UPLOAD','Upload','Mengunggah file'],
-      ['P04','PDF','PDF','Membuat PDF'],
-      ['P05','ADMIN','Admin','Administrasi']
-    ]);
-  }
+  if (permSh.getLastRow() === 1) permSh.getRange(2,1,5,4).setValues([
+    ['P01','READ','Baca','Membaca data'], ['P02','INPUT','Input/Simpan','Menyimpan data'],
+    ['P03','UPLOAD','Upload','Mengunggah file'], ['P04','PDF','PDF','Membuat PDF'], ['P05','ADMIN','Admin','Administrasi']
+  ]);
 
-  if (menuSh.getLastRow() === 1) {
-    menuSh.getRange(2,1,1,6).setValues([['DASHBOARD','Dashboard','',1,'home','TRUE']]);
-  }
+  if (menuSh.getLastRow() === 1) menuSh.getRange(2,1,1,6).setValues([['DASHBOARD','Dashboard','',1,'home','TRUE']]);
 
   if (rpSh.getLastRow() === 1) {
     const roles = Object.values(APP_CONFIG.ROLE);
