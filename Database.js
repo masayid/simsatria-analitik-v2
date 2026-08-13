@@ -25,33 +25,30 @@ const MASTER_HEADERS = Object.freeze({
 
 function getMasterSpreadsheet_() {
   const id = PropertiesService.getScriptProperties().getProperty(APP_CONFIG.PROP.MASTER_SPREADSHEET_ID);
-  if (!id) throw new Error('MASTER_SPREADSHEET_ID belum diset. Jalankan setMasterSpreadsheetId(spreadsheetId) dari editor Apps Script.');
+  if (!id) throw new Error('MASTER_SPREADSHEET_ID belum diset. Jalankan setMasterSpreadsheetId_() dari editor Apps Script.');
   return SpreadsheetApp.openById(id);
 }
 
-/** Simpan Spreadsheet MASTER pusat. Jalankan manual oleh owner/setup operator. */
-function setMasterSpreadsheetId(spreadsheetId) {
+/** Setup-only: jalankan manual dari editor Apps Script. */
+function setMasterSpreadsheetId_(spreadsheetId) {
   requireValue_(spreadsheetId, 'MASTER_SPREADSHEET_ID');
   const ss = SpreadsheetApp.openById(clean_(spreadsheetId));
   PropertiesService.getScriptProperties().setProperty(APP_CONFIG.PROP.MASTER_SPREADSHEET_ID, ss.getId());
   return ok_({spreadsheetId:ss.getId(), name:ss.getName()}, 'MASTER_SPREADSHEET_ID tersimpan.');
 }
 
-/**
- * Tetapkan akun setup owner.
- * Jalankan dari editor Apps Script sebelum aplikasi dipakai publik.
- */
-function setSetupOwnerEmail(email) {
+/** Setup-only: jalankan manual dari editor Apps Script sebelum aplikasi digunakan. */
+function setSetupOwnerEmail_(email) {
   const value = clean_(email).toLowerCase();
   if (!value || !value.includes('@')) throw new Error('Email setup owner tidak valid.');
   const current = PropertiesService.getScriptProperties().getProperty(APP_CONFIG.PROP.SETUP_OWNER_EMAIL);
-  if (current) throw new Error('SETUP_OWNER_EMAIL sudah dikunci. Gunakan resetSetupOwnerEmail() dari editor jika benar-benar diperlukan.');
+  if (current) throw new Error('SETUP_OWNER_EMAIL sudah dikunci. Gunakan resetSetupOwnerEmail_() dari editor jika benar-benar diperlukan.');
   PropertiesService.getScriptProperties().setProperty(APP_CONFIG.PROP.SETUP_OWNER_EMAIL, value);
   return ok_({email:value}, 'SETUP_OWNER_EMAIL tersimpan.');
 }
 
-/** Reset manual hanya dari editor Apps Script. */
-function resetSetupOwnerEmail() {
+/** Setup-only: reset manual dari editor Apps Script. */
+function resetSetupOwnerEmail_() {
   PropertiesService.getScriptProperties().deleteProperty(APP_CONFIG.PROP.SETUP_OWNER_EMAIL);
   return ok_(null, 'SETUP_OWNER_EMAIL dihapus. Set kembali sebelum aplikasi digunakan.');
 }
@@ -74,7 +71,8 @@ function getSetupStatus() {
   });
 }
 
-function initializeSystem() {
+/** Setup-only: bootstrap MASTER dari editor Apps Script. */
+function initializeSystem_() {
   requireSetupAccess_();
   const master = initializeMaster_();
   return ok_({
@@ -139,16 +137,13 @@ function getPermissions_(role, menu) {
 function getMenusForRole_(role) {
   const roleCode = clean_(role).toUpperCase();
   const ss = getMasterSpreadsheet_();
-  const menus = readSheetObjects_(ss, MASTER.MENU)
-    .filter(row => clean_(row.aktif).toUpperCase() !== 'FALSE');
+  const menus = readSheetObjects_(ss, MASTER.MENU).filter(row => clean_(row.aktif).toUpperCase() !== 'FALSE');
   const permissions = readSheetObjects_(ss, MASTER.ROLE_PERMISSION)
     .filter(row => clean_(row.role).toUpperCase() === roleCode)
     .filter(row => clean_(row.aktif).toUpperCase() !== 'FALSE');
-  const readableMenus = new Set(
-    permissions
-      .filter(row => clean_(row.permission).toUpperCase() === APP_CONFIG.PERMISSION.READ)
-      .map(row => clean_(row.kode_menu).toUpperCase())
-  );
+  const readableMenus = new Set(permissions
+    .filter(row => clean_(row.permission).toUpperCase() === APP_CONFIG.PERMISSION.READ)
+    .map(row => clean_(row.kode_menu).toUpperCase()));
   return menus
     .filter(row => readableMenus.has(clean_(row.kode_menu).toUpperCase()))
     .sort((a,b) => Number(a.urutan || 0) - Number(b.urutan || 0));
@@ -161,9 +156,7 @@ function initializeMaster_() {
     if (!sh) sh = ss.insertSheet(sheetName);
     const headers = MASTER_HEADERS[sheetName];
     const current = sh.getLastRow() === 0 ? [] : sh.getRange(1,1,1,Math.max(sh.getLastColumn(),headers.length)).getValues()[0];
-    if (sh.getLastRow() === 0 || current.every(v => !clean_(v))) {
-      sh.getRange(1,1,1,headers.length).setValues([headers]);
-    }
+    if (sh.getLastRow() === 0 || current.every(v => !clean_(v))) sh.getRange(1,1,1,headers.length).setValues([headers]);
     sh.setFrozenRows(1);
   });
   seedMaster_(ss);
@@ -183,19 +176,10 @@ function seedMaster_(ss) {
     ['R04','KARYAWAN','Karyawan','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE'],
     ['R05','SISWA','Siswa','Viewer storage + INPUT/UPLOAD/PDF','ACTIVE']
   ]);
-
   if (permSh.getLastRow()===1) permSh.getRange(2,1,5,4).setValues([
-    ['P01','READ','Baca','Membaca data'],
-    ['P02','INPUT','Input/Simpan','Menyimpan data'],
-    ['P03','UPLOAD','Upload','Mengunggah file'],
-    ['P04','PDF','PDF','Membuat PDF'],
-    ['P05','ADMIN','Admin','Administrasi']
+    ['P01','READ','Baca','Membaca data'],['P02','INPUT','Input/Simpan','Menyimpan data'],['P03','UPLOAD','Upload','Mengunggah file'],['P04','PDF','PDF','Membuat PDF'],['P05','ADMIN','Admin','Administrasi']
   ]);
-
-  if (menuSh.getLastRow()===1) menuSh.getRange(2,1,1,6).setValues([
-    ['DASHBOARD','Dashboard','',1,'home','TRUE']
-  ]);
-
+  if (menuSh.getLastRow()===1) menuSh.getRange(2,1,1,6).setValues([['DASHBOARD','Dashboard','',1,'home','TRUE']]);
   if (rpSh.getLastRow()===1) {
     const roles=Object.values(APP_CONFIG.ROLE);
     const perms=[APP_CONFIG.PERMISSION.READ,APP_CONFIG.PERMISSION.INPUT,APP_CONFIG.PERMISSION.UPLOAD,APP_CONFIG.PERMISSION.PDF];
@@ -206,19 +190,15 @@ function seedMaster_(ss) {
   }
 }
 
-/** Hanya SETUP_OWNER_EMAIL yang boleh mengubah MASTER. */
+/** Hanya akun SETUP_OWNER_EMAIL yang boleh mengubah MASTER. */
 function requireSetupAccess_() {
   const configured=PropertiesService.getScriptProperties().getProperty(APP_CONFIG.PROP.SETUP_OWNER_EMAIL);
-  if (!configured) throw new Error('SETUP_OWNER_EMAIL belum dikonfigurasi. Jalankan setSetupOwnerEmail(email) dari editor Apps Script.');
-  const effective=clean_(Session.getEffectiveUser().getEmail()).toLowerCase();
-  if (!effective || effective!==configured.toLowerCase()) throw new Error('Akses MASTER hanya untuk SETUP_OWNER_EMAIL.');
+  if (!configured) throw new Error('SETUP_OWNER_EMAIL belum dikonfigurasi. Jalankan setSetupOwnerEmail_() dari editor Apps Script.');
+  const active=clean_(Session.getActiveUser().getEmail()).toLowerCase();
+  if (!active || active!==configured.toLowerCase()) throw new Error('Akses MASTER hanya untuk SETUP_OWNER_EMAIL.');
   return true;
 }
 
-/**
- * Registrasi sekolah baru.
- * Sekaligus memvalidasi bahwa Spreadsheet dan Folder Drive dapat diakses.
- */
 function registerSchool(data) {
   requireSetupAccess_();
   validateSchoolPayload_(data);
@@ -232,21 +212,8 @@ function registerSchool(data) {
   const folder=DriveApp.getFolderById(clean_(data.drive_folder_id));
   if (!schoolSs.getId() || !folder.getId()) throw new Error('Storage sekolah tidak valid.');
 
-  sh.appendRow([
-    id,
-    clean_(data.npsn),
-    clean_(data.nama_sekolah),
-    schoolSs.getId(),
-    folder.getId(),
-    APP_CONFIG.STATUS.ACTIVE
-  ]);
-  return ok_({
-    idSekolah:id,
-    npsn:clean_(data.npsn),
-    namaSekolah:clean_(data.nama_sekolah),
-    spreadsheetId:schoolSs.getId(),
-    driveFolderId:folder.getId()
-  },'Sekolah berhasil didaftarkan.');
+  sh.appendRow([id,clean_(data.npsn),clean_(data.nama_sekolah),schoolSs.getId(),folder.getId(),APP_CONFIG.STATUS.ACTIVE]);
+  return ok_({idSekolah:id,npsn:clean_(data.npsn),namaSekolah:clean_(data.nama_sekolah),spreadsheetId:schoolSs.getId(),driveFolderId:folder.getId()},'Sekolah berhasil didaftarkan.');
 }
 
 function validateSchoolPayload_(data) {
@@ -263,11 +230,8 @@ function updateSchoolStatus(idSekolah,status) {
   requireSetupAccess_();
   const value=clean_(status).toUpperCase();
   if (![APP_CONFIG.STATUS.ACTIVE,APP_CONFIG.STATUS.INACTIVE].includes(value)) throw new Error('Status sekolah tidak valid.');
-  const ss=getMasterSpreadsheet_();
-  const sh=ss.getSheetByName(MASTER.SEKOLAH);
-  const values=sh.getDataRange().getValues();
-  const col=values[0].map(clean_).indexOf('id_sekolah');
-  const statusCol=values[0].map(clean_).indexOf('status');
+  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.SEKOLAH), values=sh.getDataRange().getValues();
+  const col=values[0].map(clean_).indexOf('id_sekolah'), statusCol=values[0].map(clean_).indexOf('status');
   if (col<0||statusCol<0) throw new Error('Header MASTER_SEKOLAH tidak lengkap.');
   for(let r=1;r<values.length;r++) {
     if(clean_(values[r][col]).toUpperCase()===clean_(idSekolah).toUpperCase()) {
@@ -280,24 +244,15 @@ function updateSchoolStatus(idSekolah,status) {
 
 function registerUser(data) {
   requireSetupAccess_();
-  requireValue_(data&&data.id_user,'id_user');
-  requireValue_(data&&data.id_sekolah,'id_sekolah');
-  requireValue_(data&&data.nama,'nama');
-  requireValue_(data&&data.email,'email');
-  requireValue_(data&&data.role,'role');
-
-  const role=clean_(data.role).toUpperCase();
-  const email=clean_(data.email).toLowerCase();
+  requireValue_(data&&data.id_user,'id_user'); requireValue_(data&&data.id_sekolah,'id_sekolah');
+  requireValue_(data&&data.nama,'nama'); requireValue_(data&&data.email,'email'); requireValue_(data&&data.role,'role');
+  const role=clean_(data.role).toUpperCase(), email=clean_(data.email).toLowerCase();
   if (!Object.values(APP_CONFIG.ROLE).includes(role)) throw new Error('Role tidak valid: '+role);
   if (!findSchoolById_(data.id_sekolah)) throw new Error('Sekolah tidak ditemukan atau tidak ACTIVE.');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Format email tidak valid.');
-
-  const ss=getMasterSpreadsheet_();
-  const sh=ss.getSheetByName(MASTER.USER);
-  const rows=readSheetObjects_(ss,MASTER.USER);
+  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.USER), rows=readSheetObjects_(ss,MASTER.USER);
   if (rows.some(row=>clean_(row.email).toLowerCase()===email)) throw new Error('Email user sudah terdaftar.');
   if (rows.some(row=>clean_(row.id_user).toUpperCase()===clean_(data.id_user).toUpperCase())) throw new Error('id_user sudah terdaftar.');
-
   sh.appendRow([clean_(data.id_user),clean_(data.id_sekolah).toUpperCase(),clean_(data.nama),email,role,APP_CONFIG.STATUS.ACTIVE]);
   return ok_({idUser:clean_(data.id_user),email:email,role:role,idSekolah:clean_(data.id_sekolah).toUpperCase()},'User berhasil didaftarkan.');
 }
@@ -306,11 +261,8 @@ function updateUserStatus(email,status) {
   requireSetupAccess_();
   const value=clean_(status).toUpperCase();
   if (![APP_CONFIG.STATUS.ACTIVE,APP_CONFIG.STATUS.INACTIVE].includes(value)) throw new Error('Status user tidak valid.');
-  const ss=getMasterSpreadsheet_();
-  const sh=ss.getSheetByName(MASTER.USER);
-  const values=sh.getDataRange().getValues();
-  const emailCol=values[0].map(clean_).indexOf('email');
-  const statusCol=values[0].map(clean_).indexOf('status');
+  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.USER), values=sh.getDataRange().getValues();
+  const emailCol=values[0].map(clean_).indexOf('email'), statusCol=values[0].map(clean_).indexOf('status');
   if(emailCol<0||statusCol<0) throw new Error('Header MASTER_USER tidak lengkap.');
   for(let r=1;r<values.length;r++) {
     if(clean_(values[r][emailCol]).toLowerCase()===clean_(email).toLowerCase()) {
@@ -323,11 +275,8 @@ function updateUserStatus(email,status) {
 
 function addMenu(menu) {
   requireSetupAccess_();
-  requireValue_(menu&&menu.kode_menu,'kode_menu');
-  requireValue_(menu&&menu.nama_menu,'nama_menu');
-  const ss=getMasterSpreadsheet_();
-  const sh=ss.getSheetByName(MASTER.MENU);
-  const code=clean_(menu.kode_menu).toUpperCase();
+  requireValue_(menu&&menu.kode_menu,'kode_menu'); requireValue_(menu&&menu.nama_menu,'nama_menu');
+  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.MENU), code=clean_(menu.kode_menu).toUpperCase();
   if (readSheetObjects_(ss,MASTER.MENU).some(row=>clean_(row.kode_menu).toUpperCase()===code)) throw new Error('Menu sudah terdaftar.');
   sh.appendRow([code,clean_(menu.nama_menu),clean_(menu.parent_id),Number(menu.urutan||99),clean_(menu.icon),'TRUE']);
   return ok_({kodeMenu:code},'Menu berhasil ditambahkan.');
@@ -335,11 +284,8 @@ function addMenu(menu) {
 
 function setMenuStatus(menuCode,aktif) {
   requireSetupAccess_();
-  const ss=getMasterSpreadsheet_();
-  const sh=ss.getSheetByName(MASTER.MENU);
-  const values=sh.getDataRange().getValues();
-  const codeCol=values[0].map(clean_).indexOf('kode_menu');
-  const activeCol=values[0].map(clean_).indexOf('aktif');
+  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.MENU), values=sh.getDataRange().getValues();
+  const codeCol=values[0].map(clean_).indexOf('kode_menu'), activeCol=values[0].map(clean_).indexOf('aktif');
   if(codeCol<0||activeCol<0) throw new Error('Header MASTER_MENU tidak lengkap.');
   const target=clean_(menuCode).toUpperCase();
   for(let r=1;r<values.length;r++) {
@@ -353,37 +299,23 @@ function setMenuStatus(menuCode,aktif) {
 
 function grantMenuPermission(role,menuCode,permissions) {
   requireSetupAccess_();
-  const roleCode=clean_(role).toUpperCase();
-  const menu=clean_(menuCode).toUpperCase();
+  const roleCode=clean_(role).toUpperCase(), menu=clean_(menuCode).toUpperCase();
   if (!Object.values(APP_CONFIG.ROLE).includes(roleCode)) throw new Error('Role tidak valid.');
   if (!menu) throw new Error('kode_menu wajib diisi.');
   if (!readSheetObjects_(getMasterSpreadsheet_(),MASTER.MENU).some(row=>clean_(row.kode_menu).toUpperCase()===menu)) throw new Error('Menu belum terdaftar: '+menu);
-
-  const list=Array.isArray(permissions)?permissions:[permissions];
-  const normalized=list.map(p=>clean_(p).toUpperCase());
+  const list=Array.isArray(permissions)?permissions:[permissions], normalized=list.map(p=>clean_(p).toUpperCase());
   normalized.forEach(p=>{if(!Object.values(APP_CONFIG.PERMISSION).includes(p))throw new Error('Permission tidak valid: '+p);});
-
-  const ss=getMasterSpreadsheet_();
-  const sh=ss.getSheetByName(MASTER.ROLE_PERMISSION);
-  const existing=readSheetObjects_(ss,MASTER.ROLE_PERMISSION);
-  normalized.forEach(permission=>{
-    const exists=existing.some(row=>clean_(row.role).toUpperCase()===roleCode&&clean_(row.kode_menu).toUpperCase()===menu&&clean_(row.permission).toUpperCase()===permission);
-    if(!exists)sh.appendRow([roleCode,menu,permission,'TRUE']);
-  });
+  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.ROLE_PERMISSION), existing=readSheetObjects_(ss,MASTER.ROLE_PERMISSION);
+  normalized.forEach(permission=>{const exists=existing.some(row=>clean_(row.role).toUpperCase()===roleCode&&clean_(row.kode_menu).toUpperCase()===menu&&clean_(row.permission).toUpperCase()===permission);if(!exists)sh.appendRow([roleCode,menu,permission,'TRUE']);});
   return ok_({role:roleCode,menu:menu,permissions:normalized},'Permission menu berhasil diberikan.');
 }
 
 function revokeMenuPermission(role,menuCode,permissions) {
   requireSetupAccess_();
-  const roleCode=clean_(role).toUpperCase();
-  const menu=clean_(menuCode).toUpperCase();
-  const list=Array.isArray(permissions)?permissions:[permissions];
-  const normalized=new Set(list.map(p=>clean_(p).toUpperCase()));
-  const ss=getMasterSpreadsheet_();
-  const sh=ss.getSheetByName(MASTER.ROLE_PERMISSION);
-  const values=sh.getDataRange().getValues();
-  const headers=values.shift().map(clean_);
-  const roleCol=headers.indexOf('role'), menuCol=headers.indexOf('kode_menu'), permCol=headers.indexOf('permission');
+  const roleCode=clean_(role).toUpperCase(), menu=clean_(menuCode).toUpperCase();
+  const list=Array.isArray(permissions)?permissions:[permissions], normalized=new Set(list.map(p=>clean_(p).toUpperCase()));
+  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.ROLE_PERMISSION), values=sh.getDataRange().getValues();
+  const headers=values.shift().map(clean_), roleCol=headers.indexOf('role'), menuCol=headers.indexOf('kode_menu'), permCol=headers.indexOf('permission');
   if(roleCol<0||menuCol<0||permCol<0)throw new Error('Header MASTER_ROLE_PERMISSION tidak lengkap.');
   for(let r=values.length-1;r>=0;r--) {
     if(clean_(values[r][roleCol]).toUpperCase()===roleCode&&clean_(values[r][menuCol]).toUpperCase()===menu&&normalized.has(clean_(values[r][permCol]).toUpperCase())) sh.deleteRow(r+2);
@@ -391,43 +323,19 @@ function revokeMenuPermission(role,menuCode,permissions) {
   return ok_({role:roleCode,menu:menu,permissions:Array.from(normalized)},'Permission menu dicabut.');
 }
 
-function listMasterSchools() {
-  requireSetupAccess_();
-  return ok_(readSheetObjects_(getMasterSpreadsheet_(),MASTER.SEKOLAH));
-}
-
+function listMasterSchools() { requireSetupAccess_(); return ok_(readSheetObjects_(getMasterSpreadsheet_(),MASTER.SEKOLAH)); }
 function listMasterUsers(idSekolah) {
-  requireSetupAccess_();
-  const rows=readSheetObjects_(getMasterSpreadsheet_(),MASTER.USER);
-  const target=clean_(idSekolah).toUpperCase();
+  requireSetupAccess_(); const rows=readSheetObjects_(getMasterSpreadsheet_(),MASTER.USER), target=clean_(idSekolah).toUpperCase();
   return ok_(target ? rows.filter(row=>clean_(row.id_sekolah).toUpperCase()===target) : rows);
 }
-
-function listMasterMenus() {
-  requireSetupAccess_();
-  return ok_(readSheetObjects_(getMasterSpreadsheet_(),MASTER.MENU));
-}
-
+function listMasterMenus() { requireSetupAccess_(); return ok_(readSheetObjects_(getMasterSpreadsheet_(),MASTER.MENU)); }
 function listRolePermissions(role) {
-  requireSetupAccess_();
-  const rows=readSheetObjects_(getMasterSpreadsheet_(),MASTER.ROLE_PERMISSION);
-  const target=clean_(role).toUpperCase();
+  requireSetupAccess_(); const rows=readSheetObjects_(getMasterSpreadsheet_(),MASTER.ROLE_PERMISSION), target=clean_(role).toUpperCase();
   return ok_(target ? rows.filter(row=>clean_(row.role).toUpperCase()===target) : rows);
 }
 
-/** Ringkasan operasional MASTER untuk halaman admin/setup. */
 function getMasterSummary() {
   requireSetupAccess_();
-  const ss=getMasterSpreadsheet_();
-  const count=name=>readSheetObjects_(ss,name).length;
-  return ok_({
-    spreadsheetId:ss.getId(),
-    spreadsheetName:ss.getName(),
-    sekolah:count(MASTER.SEKOLAH),
-    user:count(MASTER.USER),
-    role:count(MASTER.ROLE),
-    permission:count(MASTER.PERMISSION),
-    rolePermission:count(MASTER.ROLE_PERMISSION),
-    menu:count(MASTER.MENU)
-  });
+  const ss=getMasterSpreadsheet_(), count=name=>readSheetObjects_(ss,name).length;
+  return ok_({spreadsheetId:ss.getId(),spreadsheetName:ss.getName(),sekolah:count(MASTER.SEKOLAH),user:count(MASTER.USER),role:count(MASTER.ROLE),permission:count(MASTER.PERMISSION),rolePermission:count(MASTER.ROLE_PERMISSION),menu:count(MASTER.MENU)});
 }
