@@ -17,11 +17,16 @@ function gatewayCall_(action, payload) {
     throw new Error('ID sekolah pengguna tidak ditemukan.');
   }
 
-  const body = Object.assign({
-    action: action,
-    schoolId: schoolId,
-    token: cfg.token
-  }, payload || {});
+  // SECURITY: payload tidak boleh menimpa action, schoolId, atau token.
+  const body = Object.assign(
+    {},
+    payload || {},
+    {
+      action: action,
+      schoolId: schoolId,
+      token: cfg.token
+    }
+  );
 
   let res;
 
