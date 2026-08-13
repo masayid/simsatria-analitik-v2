@@ -46,7 +46,7 @@ function setup16_testGatewayInput() {
 
 function setup17_checkGatewayConfig() {
   const p = PropertiesService.getScriptProperties();
-  const schoolId = clean_(SETUP_CONFIG.SEKOLAH.id_sekolAH || SETUP_CONFIG.SEKOLAH.id_sekolah).toUpperCase();
+  const schoolId = clean_(SETUP_CONFIG.SEKOLAH.id_sekolAH ).toUpperCase();
   return ok_({gatewayUrlConfigured: !!p.getProperty(APP_CONFIG.PROP.GATEWAY_URL), gatewayTokenConfigured: !!p.getProperty(APP_CONFIG.PROP.GATEWAY_TOKEN), allowedSheets: p.getProperty('GATEWAY_SHEETS_' + schoolId) || '', schoolId: schoolId});
 }
 
