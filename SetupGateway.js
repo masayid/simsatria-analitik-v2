@@ -29,6 +29,8 @@ function setup15_configureGatewaySchool() {
 
   const sheets = ['TRX_GATEWAY_TEST'];
   PropertiesService.getScriptProperties().setProperty('GATEWAY_SHEETS_' + schoolId, sheets.join(','));
+  // Kompatibilitas dengan GatewayPDF.js yang sudah ada di project.
+  PropertiesService.getScriptProperties().setProperty('DRIVE_' + schoolId, school.drive_folder_id);
 
   const ss = SpreadsheetApp.openById(school.spreadsheet_id);
   let sh = ss.getSheetByName('TRX_GATEWAY_TEST');
@@ -43,14 +45,13 @@ function setup15_configureGatewaySchool() {
 
 function setup16_testGatewayInput() {
   const menu = SETUP_CONFIG.MENU_UJI.kode_menu;
-  const result = saveDataViaGateway(menu, 'TRX_GATEWAY_TEST', [
+  return saveDataViaGateway(menu, 'TRX_GATEWAY_TEST', [
     new Date(),
     Session.getActiveUser().getEmail(),
     'SPREADSHEET_APPEND',
     'TEST WRITE GATEWAY',
     'OK'
   ]);
-  return result;
 }
 
 function setup17_checkGatewayConfig() {
