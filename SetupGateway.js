@@ -29,7 +29,6 @@ function setup15_configureGatewaySchool() {
 
   const sheets = ['TRX_GATEWAY_TEST'];
   PropertiesService.getScriptProperties().setProperty('GATEWAY_SHEETS_' + schoolId, sheets.join(','));
-  // Kompatibilitas dengan GatewayPDF.js yang sudah ada di project.
   PropertiesService.getScriptProperties().setProperty('DRIVE_' + schoolId, school.drive_folder_id);
 
   const ss = SpreadsheetApp.openById(school.spreadsheet_id);
@@ -63,4 +62,51 @@ function setup17_checkGatewayConfig() {
     allowedSheets: p.getProperty('GATEWAY_SHEETS_' + schoolId) || '',
     schoolId: schoolId
   });
+}
+
+/**
+ * TAHAP 7.3 — Test UPLOAD melalui Write Gateway.
+ * Membuat file TXT kecil di memory, mengirimkannya ke Gateway,
+ * lalu Gateway menyimpan file ke drive_folder_id sekolah.
+ */
+function setup18_testGatewayUpload() {
+  const menu = SETUP_CONFIG.MENU_UJI.kode_menu;
+  const schoolId = clean_(SETUP_CONFIG.SEKOLAH.id_sekolah).toUpperCase();
+  const email = Session.getActiveUser().getEmail() || '';
+  const timestamp = new Date();
+
+  const fileName =
+    'TEST_GATEWAY_UPLOAD_' +
+    Utilities.formatDate(
+      timestamp,
+      Session.getScriptTimeZone(),
+      'yyyyMMdd_HHmmss'
+    ) +
+    '.txt';
+
+  const content = [
+    'SIM SATRIA — TEST WRITE GATEWAY UPLOAD',
+    'schoolId: ' + schoolId,
+    'email: ' + email,
+    'timestamp: ' + timestamp.toISOString(),
+    'status: OK'
+  ].join('\n');
+
+  const blob = Utilities.newBlob(content, 'text/plain', fileName);
+
+  const payload = {
+    name: fileName,
+    mimeType: 'text/plain',
+    base64: Utilities.base64Encode(blob.getBytes())
+  };
+
+  const result = uploadViaGateway(menu, payload);
+
+  return ok_({
+    action: 'DRIVE_UPLOAD',
+    schoolId: schoolId,
+    fileId: result.id || '',
+    fileName: result.name || fileName,
+    fileUrl: result.url || ''
+  }, 'TEST UPLOAD berhasil melalui Write Gateway.');
 }
