@@ -2,7 +2,7 @@
  * SIM SATRIA Multi Sekolah - entry point.
  */
 function doGet() {
-  return HtmlService.createTemplateFromFile('05_UI/index')
+  return HtmlService.createTemplateFromFile('index')
     .evaluate()
     .setTitle(SATRIA_CONFIG.APP_NAME)
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
