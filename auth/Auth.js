@@ -31,6 +31,7 @@ function getSessionContext() {
       spreadsheetId: clean_(school.spreadsheet_id),
       driveFolderId: clean_(school.drive_folder_id)
     },
+    permissions: getPermissions_(role, ''),
     menus: getMenusForRole_(role)
   }, 'Sesi aktif.');
 }
