@@ -1,13 +1,15 @@
 # MASTER_SEKOLAH
-Registry sekolah multi-tenant.
 
-| Kolom | Fungsi |
+Registry sekolah pada sistem multi-school.
+
+| Kolom | Keterangan |
 |---|---|
-| id_sekolah | PK internal |
-| npsn | Identitas sekolah |
+| id_sekolah | ID unik sekolah internal |
+| npsn | NPSN sekolah |
 | nama_sekolah | Nama sekolah |
 | spreadsheet_id | Spreadsheet operasional sekolah |
-| drive_folder_id | Folder Drive sekolah |
-| status | ACTIVE/INACTIVE |
+| drive_folder_id | Folder Drive utama sekolah |
+| status | ACTIVE / INACTIVE |
 
-**Keterangan:** satu user selalu bekerja dalam scope `id_sekolah`.
+## Prinsip
+Satu `id_sekolah` hanya boleh menunjuk satu konteks sekolah. Semua akses user dibatasi oleh `id_sekolah`.
