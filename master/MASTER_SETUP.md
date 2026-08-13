@@ -12,32 +12,32 @@ Salin ID Spreadsheet tersebut.
 
 ## 2. Set MASTER_SPREADSHEET_ID
 
-Buka Apps Script project aplikasi dan jalankan manual dari editor:
+Buka Apps Script project aplikasi dan jalankan **manual dari editor Apps Script**:
 
 ```javascript
-setMasterSpreadsheetId('SPREADSHEET_ID_MASTER');
+setMasterSpreadsheetId_('SPREADSHEET_ID_MASTER');
 ```
 
-Fungsi ini menyimpan ID ke Script Properties, bukan ke source code.
+Fungsi setup-only ini menyimpan ID ke Script Properties, bukan ke source code.
 
 ## 3. Kunci SETUP_OWNER_EMAIL
 
 Jalankan manual dari editor:
 
 ```javascript
-setSetupOwnerEmail('admin@example.sch.id');
+setSetupOwnerEmail_('admin@example.sch.id');
 ```
 
-Gunakan akun operator/owner yang memang akan mengelola MASTER.
+Gunakan akun operator yang memang akan mengelola MASTER.
 
-Setelah tersimpan, fungsi administrasi MASTER hanya dapat dijalankan oleh email tersebut.
+Fungsi setup-only ini sengaja memakai suffix `_` agar tidak tersedia sebagai fungsi client `google.script.run`.
 
 ## 4. Inisialisasi MASTER
 
-Jalankan:
+Jalankan manual dari editor:
 
 ```javascript
-initializeSystem();
+initializeSystem_();
 ```
 
 Aplikasi akan membuat sheet:
@@ -53,7 +53,7 @@ Sekaligus melakukan seed role, permission, Dashboard, dan permission Dashboard.
 
 ## 5. Daftarkan sekolah
 
-Gunakan fungsi:
+Setelah setup owner aktif, sekolah dapat didaftarkan melalui fungsi server:
 
 ```javascript
 registerSchool({
@@ -65,7 +65,7 @@ registerSchool({
 });
 ```
 
-Saat registrasi, sistem memvalidasi bahwa Spreadsheet sekolah dan Folder Drive dapat diakses oleh akun yang menjalankan setup.
+Saat registrasi, sistem memvalidasi Spreadsheet sekolah dan Folder Drive dengan akun yang sedang menjalankan operasi setup.
 
 ## 6. Daftarkan user
 
@@ -178,11 +178,13 @@ Permission role:
 listRolePermissions('GURU');
 ```
 
-## 10. Aturan penting
+## 10. Keamanan
 
 1. Jangan menaruh ID Spreadsheet, ID Folder Drive, token, atau URL gateway di source code.
 2. Jangan menjadikan GURU/WALI_KELAS/KARYAWAN/SISWA sebagai Editor hanya agar aplikasi dapat menyimpan data.
 3. Permission INPUT/UPLOAD/PDF adalah permission aplikasi dan diverifikasi server-side.
 4. Storage access Editor/Viewer akan dikerjakan pada Tahap 6.
-5. Jangan menghapus MASTER_ROLE_PERMISSION secara manual untuk mengatasi error aplikasi; gunakan fungsi grant/revoke atau konfigurasi terkontrol.
-6. `resetSetupOwnerEmail()` hanya digunakan dari editor Apps Script pada kondisi administrasi khusus.
+5. Fungsi setup awal yang berakhiran `_` dijalankan manual dari editor Apps Script.
+6. Fungsi administrasi MASTER menggunakan `Session.getActiveUser()` sehingga deployment **Execute as me** tidak membuat semua pemanggil dianggap sebagai setup owner.
+7. Jangan menghapus MASTER_ROLE_PERMISSION secara manual untuk mengatasi error aplikasi; gunakan fungsi grant/revoke atau konfigurasi terkontrol.
+8. `resetSetupOwnerEmail_()` hanya digunakan dari editor Apps Script pada kondisi administrasi khusus.
