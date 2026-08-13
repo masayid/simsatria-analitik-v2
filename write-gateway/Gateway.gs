@@ -1,9 +1,9 @@
 /** Entry point Write Gateway. Deployment ini dipisahkan dari aplikasi client. */
 function doPost(e) {
   try {
-    const payload = safeJsonParse_(e && e.postData ? e.postData.contents : '{}');
+    const payload = gatewayParse_(e && e.postData ? e.postData.contents : '{}');
     gatewayAuthorize_(payload);
-    const action = clean_(payload.action);
+    const action = gatewayClean_(payload.action);
     gatewayRequireAction_(action);
     let data;
     if (action === 'SPREADSHEET_APPEND') data = gatewayAppend_(payload.schoolId, payload.sheet, payload.row);
