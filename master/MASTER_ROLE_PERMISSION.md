@@ -1,10 +1,29 @@
 # MASTER_ROLE_PERMISSION
-Relasi role dengan menu dan permission.
 
-Kolom minimal: `role`, `kode_menu`, `permission`, `aktif`.
+Relasi role, menu, dan permission.
 
-Target utama:
-- ADMIN_SEKOLAH: READ + INPUT + UPLOAD + PDF + ADMIN
-- GURU/WALI_KELAS/KARYAWAN/SISWA: READ + INPUT + UPLOAD + PDF
+| role | kode_menu | permission | aktif |
+|---|---|---|---|
+| ADMIN_SEKOLAH | DASHBOARD | READ | TRUE |
+| ADMIN_SEKOLAH | DASHBOARD | INPUT | TRUE |
+| ADMIN_SEKOLAH | DASHBOARD | UPLOAD | TRUE |
+| ADMIN_SEKOLAH | DASHBOARD | PDF | TRUE |
+| ADMIN_SEKOLAH | DASHBOARD | ADMIN | TRUE |
+| GURU | DASHBOARD | READ | TRUE |
+| GURU | DASHBOARD | INPUT | TRUE |
+| GURU | DASHBOARD | UPLOAD | TRUE |
+| GURU | DASHBOARD | PDF | TRUE |
+| WALI_KELAS | DASHBOARD | READ | TRUE |
+| WALI_KELAS | DASHBOARD | INPUT | TRUE |
+| WALI_KELAS | DASHBOARD | UPLOAD | TRUE |
+| WALI_KELAS | DASHBOARD | PDF | TRUE |
+| KARYAWAN | DASHBOARD | READ | TRUE |
+| KARYAWAN | DASHBOARD | INPUT | TRUE |
+| KARYAWAN | DASHBOARD | UPLOAD | TRUE |
+| KARYAWAN | DASHBOARD | PDF | TRUE |
+| SISWA | DASHBOARD | READ | TRUE |
+| SISWA | DASHBOARD | INPUT | TRUE |
+| SISWA | DASHBOARD | UPLOAD | TRUE |
+| SISWA | DASHBOARD | PDF | TRUE |
 
-Dengan demikian status Viewer pada Spreadsheet/Drive tidak menghilangkan hak operasi aplikasi.
+Saat menu baru dibuat, permission menu harus diberikan melalui `grantMenuPermission()`.
