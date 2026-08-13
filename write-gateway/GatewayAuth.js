@@ -1,7 +1,7 @@
 /** Validasi token gateway dan sekolah target. */
 function gatewayAuthorize_(payload) {
-  const expected = PropertiesService.getScriptProperties().getProperty(APP_CONFIG.PROP.GATEWAY_TOKEN);
-  gatewayRequire_(expected, 'GATEWAY_TOKEN belum dikonfigurasi.');
+  const expected = PropertiesService.getScriptProperties().getProperty(GATEWAY_CONFIG.PROP.GATEWAY_TOKEN);
+  gatewayRequire_(expected, 'GATEWAY_TOKEN belum dikonfigurasi pada Write Gateway.');
   gatewayRequire_(gatewayClean_(payload && payload.token) === expected, 'Unauthorized gateway request.');
   gatewayRequire_(gatewayClean_(payload && payload.schoolId), 'schoolId wajib dikirim.');
 
