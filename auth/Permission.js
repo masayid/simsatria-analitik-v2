@@ -1,10 +1,10 @@
 /**
  * Permission aplikasi dipisahkan dari permission Google Spreadsheet/Drive.
- * Viewer storage tetap dapat INPUT/UPLOAD/PDF apabila role memiliki permission aplikasi.
+ * Runtime permission dibaca dari Auth Directory, bukan MASTER Spreadsheet.
  */
 function hasPermission_(permission, menu) {
   const role = getCurrentRole_();
-  return getPermissions_(role, menu).indexOf(clean_(permission).toUpperCase()) >= 0;
+  return getRuntimePermissions_(role, menu).indexOf(clean_(permission).toUpperCase()) >= 0;
 }
 
 function requirePermission_(permission, menu) {
@@ -16,5 +16,5 @@ function requirePermission_(permission, menu) {
 
 function getCurrentPermissions(menu) {
   const role = getCurrentRole_();
-  return ok_(getPermissions_(role, menu || ''));
+  return ok_(getRuntimePermissions_(role, menu || ''));
 }
