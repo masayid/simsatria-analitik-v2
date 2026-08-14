@@ -1,18 +1,8 @@
 /**
  * SIM SATRIA — TAHAP 8.9
  * Test Write Gateway untuk GURU sekolah kedua.
- *
- * PENTING:
- * - setup31_verifySchool2GatewayConfig() dijalankan sebagai SETUP_OWNER.
- * - testGatewayWriteAsCurrentUser() harus dipanggil dari Web App sebagai
- *   user yang sedang login. Jangan menjalankannya dari Apps Script Editor
- *   jika ingin menguji konteks GURU.
  */
 
-/**
- * Verifikasi konfigurasi Gateway sekolah 2 dari sisi SETUP_OWNER.
- * Ini bukan simulasi login Guru.
- */
 function setup31_verifySchool2GatewayConfig() {
   requireSetupAccess_();
 
@@ -42,11 +32,6 @@ function setup31_verifySchool2GatewayConfig() {
   return result;
 }
 
-/**
- * PENGUJIAN UTAMA 8.9.
- * Panggil dari Web App setelah Guru sekolah 2 login.
- * Karena USER_ACCESSING, Session.getActiveUser() harus menjadi akun Guru.
- */
 function testGatewayWriteAsCurrentUser() {
   const email = clean_(Session.getActiveUser().getEmail()).toLowerCase();
   const expectedEmail = 'kurikulum.sman3pwr@gmail.com';
@@ -63,13 +48,27 @@ function testGatewayWriteAsCurrentUser() {
     throw new Error('Pengujian 8.9 harus dijalankan sebagai ' + expectedEmail + '. Akun aktif: ' + email);
   }
 
-  const context = getSessionContext();
+  // getSessionContext() mengembalikan envelope {ok:true,data:{user,school,...}}.
+  // Sebelumnya test langsung membaca response.user/response.school sehingga selalu
+  // gagal walaupun frontend sudah berhasil membaca session melalui response.data.
+  const sessionResponse = getSessionContext();
+  const context = sessionResponse && sessionResponse.ok && sessionResponse.data
+    ? sessionResponse.data
+    : sessionResponse;
+
   if (!context || !context.user || !context.school) {
     throw new Error('Session context user/sekolah tidak tersedia.');
   }
 
-  const schoolId = clean_(context.school.id_sekolah).toUpperCase();
+  const schoolId = clean_(
+    context.school.idSekolah || context.school.id_sekolah
+  ).toUpperCase();
   const role = clean_(context.user.role).toUpperCase();
+  const userEmail = clean_(context.user.email || email).toLowerCase();
+
+  if (userEmail !== email) {
+    throw new Error('Email session tidak konsisten. Active=' + email + ', Session=' + userEmail);
+  }
 
   if (schoolId !== expectedSchool) {
     throw new Error('School context salah. Diharapkan ' + expectedSchool + ', diperoleh ' + schoolId);
@@ -79,7 +78,6 @@ function testGatewayWriteAsCurrentUser() {
     throw new Error('Role salah. Diharapkan GURU, diperoleh ' + role);
   }
 
-  // Input permission harus lolos sebagai GURU sekolah 2.
   requirePermission_(APP_CONFIG.PERMISSION.INPUT, menu);
 
   const marker = 'SCHOOL2_GURU_GATEWAY_' + Utilities.getUuid();
@@ -115,10 +113,6 @@ function testGatewayWriteAsCurrentUser() {
   return result;
 }
 
-/**
- * Endpoint helper sederhana untuk frontend.
- * Frontend dapat memanggil google.script.run.testGatewayWriteAsCurrentUser().
- */
 function runSchool2GatewayTestFromWebApp() {
   return testGatewayWriteAsCurrentUser();
 }
