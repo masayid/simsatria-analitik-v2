@@ -1,7 +1,12 @@
 /**
  * RUNTIME AUTH DIRECTORY
- * Web App USER_ACCESSING tidak membaca MASTER Spreadsheet saat runtime.
- * SETUP_OWNER melakukan sinkronisasi snapshot ke Script Properties.
+ *
+ * Runtime Web App berjalan sebagai USER_ACCESSING.
+ * User biasa TIDAK membaca MASTER Spreadsheet secara langsung.
+ * SETUP_OWNER melakukan sinkronisasi data MASTER ke Script Properties.
+ *
+ * File ini sengaja menjadi dependency eksplisit untuk Auth.js,
+ * Role.js, dan Permission.js.
  */
 const RUNTIME_AUTH_PROP = Object.freeze({
   USERS: 'RUNTIME_AUTH_USERS_V1',
@@ -11,8 +16,13 @@ const RUNTIME_AUTH_PROP = Object.freeze({
   SYNCED_AT: 'RUNTIME_AUTH_SYNCED_AT_V1'
 });
 
+/**
+ * Jalankan MANUAL dari Apps Script Editor sebagai SETUP_OWNER.
+ * Tidak boleh dijalankan oleh user aplikasi biasa.
+ */
 function setup29_syncRuntimeAuthDirectory() {
   requireSetupAccess_();
+
   const master = getMasterSpreadsheet_();
 
   const users = readSheetObjects_(master, MASTER.USER).map(function(row) {
@@ -75,6 +85,7 @@ function setup29_syncRuntimeAuthDirectory() {
     syncedAt: props.getProperty(RUNTIME_AUTH_PROP.SYNCED_AT),
     message: 'Runtime Auth Directory berhasil disinkronkan dari MASTER.'
   };
+
   Logger.log(JSON.stringify(result, null, 2));
   return result;
 }
@@ -85,9 +96,14 @@ function getRuntimeAuthDirectory_() {
   const schoolsJson = props.getProperty(RUNTIME_AUTH_PROP.SCHOOLS);
   const permissionsJson = props.getProperty(RUNTIME_AUTH_PROP.ROLE_PERMISSIONS);
   const menusJson = props.getProperty(RUNTIME_AUTH_PROP.MENUS);
+
   if (!usersJson || !schoolsJson || !permissionsJson || !menusJson) {
-    throw new Error('Runtime Auth Directory belum disinkronkan. Jalankan setup29_syncRuntimeAuthDirectory() sebagai SETUP_OWNER.');
+    throw new Error(
+      'Runtime Auth Directory belum disinkronkan. ' +
+      'Jalankan setup29_syncRuntimeAuthDirectory() sebagai SETUP_OWNER.'
+    );
   }
+
   try {
     return {
       users: JSON.parse(usersJson),
@@ -96,7 +112,10 @@ function getRuntimeAuthDirectory_() {
       menus: JSON.parse(menusJson)
     };
   } catch (e) {
-    throw new Error('Runtime Auth Directory rusak. Jalankan ulang setup29_syncRuntimeAuthDirectory().');
+    throw new Error(
+      'Runtime Auth Directory rusak. ' +
+      'Jalankan ulang setup29_syncRuntimeAuthDirectory().'
+    );
   }
 }
 
@@ -118,26 +137,52 @@ function getRuntimeSchoolById_(id) {
 function getRuntimePermissions_(role, menu) {
   const roleCode = clean_(role).toUpperCase();
   const menuCode = clean_(menu).toUpperCase();
+
   return getRuntimeAuthDirectory_().rolePermissions
-    .filter(function(row) { return clean_(row.role).toUpperCase() === roleCode; })
-    .filter(function(row) { return !menuCode || clean_(row.kode_menu).toUpperCase() === menuCode; })
-    .filter(function(row) { return clean_(row.aktif).toUpperCase() !== 'FALSE'; })
-    .map(function(row) { return clean_(row.permission).toUpperCase(); });
+    .filter(function(row) {
+      return clean_(row.role).toUpperCase() === roleCode;
+    })
+    .filter(function(row) {
+      return !menuCode || clean_(row.kode_menu).toUpperCase() === menuCode;
+    })
+    .filter(function(row) {
+      return clean_(row.aktif).toUpperCase() !== 'FALSE';
+    })
+    .map(function(row) {
+      return clean_(row.permission).toUpperCase();
+    });
 }
 
 function getRuntimeMenusForRole_(role) {
   const roleCode = clean_(role).toUpperCase();
   const directory = getRuntimeAuthDirectory_();
-  const readableMenus = new Set(directory.rolePermissions
-    .filter(function(row) { return clean_(row.role).toUpperCase() === roleCode; })
-    .filter(function(row) { return clean_(row.permission).toUpperCase() === APP_CONFIG.PERMISSION.READ; })
-    .filter(function(row) { return clean_(row.aktif).toUpperCase() !== 'FALSE'; })
-    .map(function(row) { return clean_(row.kode_menu).toUpperCase(); }));
+
+  const readableMenus = new Set(
+    directory.rolePermissions
+      .filter(function(row) {
+        return clean_(row.role).toUpperCase() === roleCode;
+      })
+      .filter(function(row) {
+        return clean_(row.permission).toUpperCase() === APP_CONFIG.PERMISSION.READ;
+      })
+      .filter(function(row) {
+        return clean_(row.aktif).toUpperCase() !== 'FALSE';
+      })
+      .map(function(row) {
+        return clean_(row.kode_menu).toUpperCase();
+      })
+  );
 
   return directory.menus
-    .filter(function(row) { return clean_(row.aktif).toUpperCase() !== 'FALSE'; })
-    .filter(function(row) { return readableMenus.has(clean_(row.kode_menu).toUpperCase()); })
-    .sort(function(a, b) { return Number(a.urutan || 0) - Number(b.urutan || 0); });
+    .filter(function(row) {
+      return clean_(row.aktif).toUpperCase() !== 'FALSE';
+    })
+    .filter(function(row) {
+      return readableMenus.has(clean_(row.kode_menu).toUpperCase());
+    })
+    .sort(function(a, b) {
+      return Number(a.urutan || 0) - Number(b.urutan || 0);
+    });
 }
 
 function getRuntimeAuthStatus() {
@@ -148,9 +193,12 @@ function getRuntimeAuthStatus() {
     props.getProperty(RUNTIME_AUTH_PROP.ROLE_PERMISSIONS) &&
     props.getProperty(RUNTIME_AUTH_PROP.MENUS)
   );
+
   return ok_({
     configured: configured,
     syncedAt: props.getProperty(RUNTIME_AUTH_PROP.SYNCED_AT) || '',
-    message: configured ? 'Runtime Auth Directory siap.' : 'Runtime Auth Directory belum siap.'
+    message: configured
+      ? 'Runtime Auth Directory siap.'
+      : 'Runtime Auth Directory belum siap.'
   });
 }
