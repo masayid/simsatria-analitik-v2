@@ -1,1 +1,17 @@
-<nav class="sidebar-nav"><div class="nav-title">MENU</div><button class="nav-item active" data-menu="DASHBOARD" onclick="loadDashboard()">⌂ <span>Dashboard</span></button><div id="dynamicMenus"></div><button id="testGatewayBtn" class="nav-item" data-menu="TEST_GATEWAY" style="display:none" onclick="testWriteGateway()">⚡ <span>TEST WRITE GATEWAY</span></button></nav>
+<nav class="sidebar-nav">
+  <div class="nav-title">MENU</div>
+
+  <button class="nav-item active" data-menu="DASHBOARD" onclick="loadDashboard()">
+    ⌂ <span>Dashboard</span>
+  </button>
+
+  <div id="dynamicMenus"></div>
+
+  <button id="testGatewayBtn" class="nav-item" data-menu="TEST_GATEWAY" style="display:none" onclick="testWriteGateway()">
+    ⚡ <span>TEST WRITE GATEWAY</span>
+  </button>
+
+  <button id="testCrossSchoolBtn" class="nav-item" data-menu="TEST_CROSS_SCHOOL" style="display:none" onclick="testCrossSchoolIsolation()">
+    🛡 <span>TEST CROSS-SCHOOL ISOLATION</span>
+  </button>
+</nav>
