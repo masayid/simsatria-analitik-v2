@@ -18,9 +18,7 @@ function testGatewayPDFCrossSchoolAsCurrentUser() {
 
   if (!email) throw new Error('Email user aktif tidak tersedia. Jalankan dari Web App setelah login Google.');
   if (email !== expectedEmail) throw new Error('Pengujian 8.14 harus dijalankan sebagai ' + expectedEmail + '. Akun aktif: ' + email);
-  if (!forgedSchool || !forgedFolderId) {
-    throw new Error('Konfigurasi cross-school belum tersedia. Jalankan setup29_prepareCrossSchoolUploadTest() sekali sebagai SETUP_OWNER.');
-  }
+  if (!forgedSchool || !forgedFolderId) throw new Error('Konfigurasi cross-school belum tersedia. Jalankan setup29_prepareCrossSchoolUploadTest() sekali sebagai SETUP_OWNER.');
   if (forgedSchool === expectedSchool) throw new Error('Sekolah pembanding harus berbeda dari sekolah aktif.');
 
   const sessionResponse = getSessionContext();
@@ -68,9 +66,7 @@ function testGatewayPDFCrossSchoolAsCurrentUser() {
     targetFolderId: forgedFolderId
   });
 
-  if (!gatewayResult || gatewayResult.ok !== true) {
-    throw new Error('Gateway PDF menolak request: ' + (gatewayResult && gatewayResult.message ? gatewayResult.message : 'respons tidak sukses.'));
-  }
+  if (!gatewayResult || gatewayResult.ok !== true) throw new Error('Gateway PDF menolak request: ' + (gatewayResult && gatewayResult.message ? gatewayResult.message : 'respons tidak sukses.'));
 
   const data = gatewayResult.data || {};
   const effectiveSchool = clean_(data.schoolId || data.idSekolah || actualSchool).toUpperCase();
@@ -101,8 +97,8 @@ function testGatewayPDFCrossSchoolAsCurrentUser() {
     }
   }
 
-  const folderOverrideBlocked = folderVerification === 'PASS' || (!reportedFolder && !fileId);
-  const passed = schoolOverrideBlocked && folderOverrideBlocked && folderVerification !== 'FAIL';
+  const folderOverrideBlocked = folderVerification === 'PASS';
+  const passed = schoolOverrideBlocked && folderOverrideBlocked;
 
   const result = {
     ok: passed,
