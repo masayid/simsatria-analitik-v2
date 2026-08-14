@@ -5,15 +5,16 @@ function getCurrentUser_() {
   return email.toLowerCase();
 }
 
+/** Runtime authentication untuk deployment USER_ACCESSING. */
 function getSessionContext() {
   const email = getCurrentUser_();
-  const user = findUserByEmail_(email);
+  const user = getRuntimeUserByEmail_(email);
   if (!user || clean_(user.status).toUpperCase() !== 'ACTIVE') {
     throw new Error('User belum terdaftar atau status user tidak ACTIVE.');
   }
 
   const role = clean_(user.role).toUpperCase();
-  const school = findSchoolById_(user.id_sekolah);
+  const school = getRuntimeSchoolById_(user.id_sekolah);
   if (!school) throw new Error('Sekolah user belum terdaftar atau tidak aktif.');
 
   return ok_({
@@ -22,16 +23,16 @@ function getSessionContext() {
       nama: clean_(user.nama),
       email: email,
       role: role,
-      idSekolah: clean_(user.id_sekolah)
+      idSekolah: clean_(user.id_sekolah).toUpperCase()
     },
     school: {
-      idSekolah: clean_(school.id_sekolah),
+      idSekolah: clean_(school.id_sekolah).toUpperCase(),
       npsn: clean_(school.npsn),
       namaSekolah: clean_(school.nama_sekolah),
       spreadsheetId: clean_(school.spreadsheet_id),
       driveFolderId: clean_(school.drive_folder_id)
     },
-    permissions: getPermissions_(role, ''),
-    menus: getMenusForRole_(role)
+    permissions: getRuntimePermissions_(role, ''),
+    menus: getRuntimeMenusForRole_(role)
   }, 'Sesi aktif.');
 }
