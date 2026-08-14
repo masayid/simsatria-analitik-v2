@@ -4,52 +4,31 @@ function testGatewayUploadCrossSchool() {
   const btn = document.getElementById('testUploadCrossSchoolBtn');
   const result = document.getElementById('gatewayTestResult');
   if (!btn || !result) return;
-  const span = btn.querySelector('span');
-  let finished = false;
-  btn.disabled = true; btn.style.opacity = '0.65';
-  if (span) span.textContent = 'Menguji Isolasi Upload...';
-  result.style.display = 'block';
-  result.innerHTML = '<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL ISOLATION</h5><p>Menguji schoolId dan folderId palsu...</p></div>';
-  const reset = function(){ btn.disabled=false; btn.style.opacity='1'; if(span) span.textContent='TEST UPLOAD CROSS-SCHOOL'; };
-  const timeoutId = setTimeout(function(){
-    if(finished)return; finished=true; reset();
-    result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — TIMEOUT</h5><p>❌ Server belum mengembalikan respons.</p></div>';
-  },30000);
+  const span = btn.querySelector('span'); let finished = false;
+  btn.disabled=true; btn.style.opacity='0.65'; if(span)span.textContent='Menguji Isolasi Upload...';
+  result.style.display='block'; result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL ISOLATION</h5><p>Menguji schoolId dan folderId palsu...</p></div>';
+  const reset=function(){btn.disabled=false;btn.style.opacity='1';if(span)span.textContent='TEST UPLOAD CROSS-SCHOOL';};
+  const timeoutId=setTimeout(function(){if(finished)return;finished=true;reset();result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — TIMEOUT</h5><p>❌ Server belum mengembalikan respons.</p></div>';},30000);
   google.script.run.withSuccessHandler(function(response){
-    if(finished)return; finished=true; clearTimeout(timeoutId); reset();
-    if(!response || response.ok!==true){ result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — GAGAL</h5><p>❌ Pengujian belum lulus.</p><pre>'+escapeHtml(JSON.stringify(response||{},null,2))+'</pre></div>'; return; }
-    result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — PASS</h5>'+
-      '<p><b>User:</b> '+escapeHtml(response.user)+'</p><p><b>Role:</b> '+escapeHtml(response.role)+'</p><p><b>Actual School:</b> '+escapeHtml(response.actualSchool)+'</p><p><b>Forged School:</b> '+escapeHtml(response.forgedSchool)+'</p><p><b>Effective School:</b> '+escapeHtml(response.effectiveSchool)+'</p><p><b>School Override:</b> '+escapeHtml(response.schoolOverride)+(response.schoolOverride==='BLOCKED'?' ✓':' ❌')+'</p><p><b>Folder Override:</b> '+escapeHtml(response.folderOverride)+(response.folderOverride==='BLOCKED'?' ✓':' ❌')+'</p><p><b>Drive Upload:</b> '+escapeHtml(response.driveUpload)+' ✓</p><p><b>Effective Folder:</b> '+escapeHtml(response.effectiveFolderId||'-')+'</p><p><b>File:</b> '+escapeHtml(response.fileName||'-')+'</p><p>'+escapeHtml(response.message||'Cross-school upload berhasil diuji.')+'</p></div>';
-  }).withFailureHandler(function(error){
-    if(finished)return; finished=true; clearTimeout(timeoutId); reset();
-    result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — GAGAL</h5><p>❌ '+escapeHtml(error&&error.message?error.message:String(error||'Pengujian gagal.'))+'</p></div>';
-  }).testGatewayUploadCrossSchoolAsCurrentUser();
+    if(finished)return;finished=true;clearTimeout(timeoutId);reset();
+    if(!response||response.ok!==true){result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — GAGAL</h5><p>❌ Pengujian belum lulus.</p><pre>'+escapeHtml(JSON.stringify(response||{},null,2))+'</pre></div>';return;}
+    result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — PASS</h5><p><b>User:</b> '+escapeHtml(response.user)+'</p><p><b>Role:</b> '+escapeHtml(response.role)+'</p><p><b>Actual School:</b> '+escapeHtml(response.actualSchool)+'</p><p><b>Forged School:</b> '+escapeHtml(response.forgedSchool)+'</p><p><b>Effective School:</b> '+escapeHtml(response.effectiveSchool)+'</p><p><b>School Override:</b> '+escapeHtml(response.schoolOverride)+(response.schoolOverride==='BLOCKED'?' ✓':' ❌')+'</p><p><b>Folder Override:</b> '+escapeHtml(response.folderOverride)+(response.folderOverride==='BLOCKED'?' ✓':' ❌')+'</p><p><b>Drive Upload:</b> '+escapeHtml(response.driveUpload)+' ✓</p><p><b>Effective Folder:</b> '+escapeHtml(response.effectiveFolderId||'-')+'</p><p><b>File:</b> '+escapeHtml(response.fileName||'-')+'</p><p>'+escapeHtml(response.message||'Cross-school upload berhasil diuji.')+'</p></div>';
+  }).withFailureHandler(function(error){if(finished)return;finished=true;clearTimeout(timeoutId);reset();result.innerHTML='<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — GAGAL</h5><p>❌ '+escapeHtml(error&&error.message?error.message:String(error||'Pengujian gagal.'))+'</p></div>';}).testGatewayUploadCrossSchoolAsCurrentUser();
 }
 
 /* TAHAP 8.13 — PDF Gateway */
-function showPDFGatewayButton_() {
-  const btn=document.getElementById('testPDFGatewayBtn');
-  const session=window.SATRIA_SESSION;
-  if(!btn || !session || !session.user || !session.school) return;
-  const email=String(session.user.email||'').toLowerCase();
-  const role=String(session.user.role||'').toUpperCase();
-  const school=String(session.school.idSekolah||session.school.id_sekolah||'').toUpperCase();
-  btn.style.display=(email==='kurikulum.sman3pwr@gmail.com' && role==='GURU' && school==='SMANTI03PWJ')?'block':'none';
+function showPDFGatewayButton_(){
+  const btn=document.getElementById('testPDFGatewayBtn'); if(!btn)return;
+  const info=document.getElementById('sessionInfo'); const schoolInfo=document.getElementById('schoolInfo');
+  const text=(info?info.textContent:'')+' '+(schoolInfo?schoolInfo.textContent:'');
+  const ok=text.toLowerCase().indexOf('kurikulum.sman3pwr@gmail.com')>=0 && text.toUpperCase().indexOf('GURU')>=0 && text.toUpperCase().indexOf('SMANTI03PWJ')>=0;
+  btn.style.display=ok?'block':'none';
 }
-
-function testGatewayPDF() {
-  const btn=document.getElementById('testPDFGatewayBtn');
-  const result=document.getElementById('gatewayTestResult');
-  if(!btn || !result)return;
-  const span=btn.querySelector('span'); btn.disabled=true; btn.style.opacity='0.65'; if(span)span.textContent='Menguji PDF Gateway...';
-  result.style.display='block'; result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY</h5><p>Membuat PDF melalui Write Gateway sebagai Guru Sekolah 2...</p></div>';
+function testGatewayPDF(){
+  const btn=document.getElementById('testPDFGatewayBtn'); const result=document.getElementById('gatewayTestResult'); if(!btn||!result)return;
+  const span=btn.querySelector('span'); btn.disabled=true;btn.style.opacity='0.65';if(span)span.textContent='Menguji PDF Gateway...';result.style.display='block';result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY</h5><p>Membuat PDF melalui Write Gateway sebagai Guru Sekolah 2...</p></div>';
   const timeoutId=setTimeout(function(){btn.disabled=false;btn.style.opacity='1';if(span)span.textContent='TEST PDF GATEWAY';result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY — TIMEOUT</h5><p>❌ Server belum mengembalikan respons. Pastikan fungsi <b>testGatewayPDFAsCurrentUser</b> sudah dipull dan Web App dideploy ulang.</p></div>';},30000);
-  google.script.run.withSuccessHandler(function(response){
-    clearTimeout(timeoutId); btn.disabled=false; btn.style.opacity='1'; if(span)span.textContent='TEST PDF GATEWAY';
-    if(!response || response.ok!==true){result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY — GAGAL</h5><p>❌ Gateway PDF menolak pengujian.</p><pre>'+escapeHtml(JSON.stringify(response||{},null,2))+'</pre></div>';return;}
-    result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY — PASS</h5><p><b>User:</b> '+escapeHtml(response.user)+'</p><p><b>Role:</b> '+escapeHtml(response.role)+'</p><p><b>Sekolah:</b> '+escapeHtml(response.schoolId)+'</p><p><b>Gateway:</b> '+escapeHtml(response.gateway)+' ✓</p><p><b>PDF Create:</b> '+escapeHtml(response.pdfCreate)+' ✓</p><p><b>File:</b> '+escapeHtml(response.fileName||'-')+'</p><p><b>File ID:</b> '+escapeHtml(response.fileId||'-')+'</p>'+(response.fileUrl?'<p><b>URL:</b> <a href="'+escapeHtml(response.fileUrl)+'" target="_blank" rel="noopener">Buka PDF</a></p>':'')+'<p>'+escapeHtml(response.message||'PDF Gateway berhasil.')+'</p></div>';
-  }).withFailureHandler(function(error){clearTimeout(timeoutId);btn.disabled=false;btn.style.opacity='1';if(span)span.textContent='TEST PDF GATEWAY';result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY — GAGAL</h5><p>❌ '+escapeHtml(error&&error.message?error.message:String(error||'Pengujian gagal.'))+'</p></div>';}).testGatewayPDFAsCurrentUser();
+  google.script.run.withSuccessHandler(function(response){clearTimeout(timeoutId);btn.disabled=false;btn.style.opacity='1';if(span)span.textContent='TEST PDF GATEWAY';if(!response||response.ok!==true){result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY — GAGAL</h5><p>❌ Gateway PDF menolak pengujian.</p><pre>'+escapeHtml(JSON.stringify(response||{},null,2))+'</pre></div>';return;}result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY — PASS</h5><p><b>User:</b> '+escapeHtml(response.user)+'</p><p><b>Role:</b> '+escapeHtml(response.role)+'</p><p><b>Sekolah:</b> '+escapeHtml(response.schoolId)+'</p><p><b>Gateway:</b> '+escapeHtml(response.gateway)+' ✓</p><p><b>PDF Create:</b> '+escapeHtml(response.pdfCreate)+' ✓</p><p><b>File:</b> '+escapeHtml(response.fileName||'-')+'</p><p><b>File ID:</b> '+escapeHtml(response.fileId||'-')+'</p>'+(response.fileUrl?'<p><b>URL:</b> <a href="'+escapeHtml(response.fileUrl)+'" target="_blank" rel="noopener">Buka PDF</a></p>':'')+'<p>'+escapeHtml(response.message||'PDF Gateway berhasil.')+'</p></div>';}).withFailureHandler(function(error){clearTimeout(timeoutId);btn.disabled=false;btn.style.opacity='1';if(span)span.textContent='TEST PDF GATEWAY';result.innerHTML='<div class="card-body"><h5>TEST PDF GATEWAY — GAGAL</h5><p>❌ '+escapeHtml(error&&error.message?error.message:String(error||'Pengujian gagal.'))+'</p></div>';}).testGatewayPDFAsCurrentUser();
 }
-
-(function(){let tries=0;const t=setInterval(function(){tries++;showPDFGatewayButton_();if(window.SATRIA_SESSION||tries>60)clearInterval(t);},250);window.addEventListener('load',showPDFGatewayButton_);})();
+(function(){let tries=0;const t=setInterval(function(){tries++;showPDFGatewayButton_();if(tries>60)clearInterval(t);},250);window.addEventListener('load',showPDFGatewayButton_);})();
 </script>
