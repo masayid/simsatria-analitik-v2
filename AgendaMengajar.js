@@ -2,7 +2,7 @@
  * MENU FUNGSIONAL: AGENDA MENGAJAR GURU
  * Versi sederhana: tampilkan form dan simpan melalui Write Gateway.
  */
-const AGENDA_MENGAJAR_MENU = 'AGENDA_MENGAJAR';
+const AGENDA_MENGAJAR_MENU = 'AGENDA_GURU';
 const AGENDA_MENGAJAR_SHEET = 'TRX_AGENDA_GURU';
 
 function simpanAgendaMengajar(data) {
@@ -31,8 +31,6 @@ function simpanAgendaMengajar(data) {
   }
 
   const user = session.data.user;
-
-  // Kolom transaksi dibuat sederhana dan mudah dipetakan ke sheet TRX_AGENDA_GURU.
   const row = [
     new Date(),
     clean_(user.idUser || user.id_user),
