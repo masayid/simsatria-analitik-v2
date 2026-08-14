@@ -19,16 +19,20 @@ function renderSession(response) {
   renderMenus(SATRIA_SESSION.menus || []);
   renderPermissions(SATRIA_SESSION.permissions || []);
 
-  // TAHAP 8.9: tombol diagnostik hanya ditampilkan untuk Guru Sekolah 2.
+  // Diagnostic buttons hanya untuk Guru Sekolah 2.
   const testBtn = document.getElementById('testGatewayBtn');
+  const uploadBtn = document.getElementById('testUploadGatewayBtn');
   const crossBtn = document.getElementById('testCrossSchoolBtn');
+  const uploadCrossBtn = document.getElementById('testUploadCrossSchoolBtn');
   const email = String(user.email || '').toLowerCase();
   const role = String(user.role || '').toUpperCase();
   const schoolId = String(school.idSekolah || '').toUpperCase();
   const isSchool2Guru = email === 'kurikulum.sman3pwr@gmail.com' && role === 'GURU' && schoolId === 'SMANTI03PWJ';
 
   if (testBtn) testBtn.style.display = isSchool2Guru ? 'block' : 'none';
+  if (uploadBtn) uploadBtn.style.display = isSchool2Guru ? 'block' : 'none';
   if (crossBtn) crossBtn.style.display = isSchool2Guru ? 'block' : 'none';
+  if (uploadCrossBtn) uploadCrossBtn.style.display = isSchool2Guru ? 'block' : 'none';
 }
 
 function renderMenus(menus) {
@@ -63,107 +67,44 @@ function testWriteGateway() {
   const btn = document.getElementById('testGatewayBtn');
   const result = document.getElementById('gatewayTestResult');
   if (!btn || !result) return;
-
   btn.disabled = true;
   btn.style.opacity = '0.65';
   btn.querySelector('span').textContent = 'Menguji Gateway...';
   result.style.display = 'block';
   result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY</h5><p>Memproses write sebagai Guru Sekolah 2...</p></div>';
-
-  google.script.run
-    .withSuccessHandler(function(response) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.querySelector('span').textContent = 'TEST WRITE GATEWAY';
-
-      if (!response || response.ok !== true) {
-        result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY</h5><p>❌ Gateway menolak pengujian.</p><pre>' + escapeHtml(JSON.stringify(response || {}, null, 2)) + '</pre></div>';
-        return;
-      }
-
-      result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY — PASS</h5>' +
-        '<p><b>User:</b> ' + escapeHtml(response.user) + '</p>' +
-        '<p><b>Role:</b> ' + escapeHtml(response.role) + '</p>' +
-        '<p><b>Sekolah:</b> ' + escapeHtml(response.schoolId) + '</p>' +
-        '<p><b>Target:</b> ' + escapeHtml(response.targetSheet) + '</p>' +
-        '<p><b>school2Write:</b> PASS ✓</p>' +
-        '<p><b>crossSchool:</b> NOT_TESTED</p>' +
-        '<p>' + escapeHtml(response.message || 'Write Gateway berhasil.') + '</p></div>';
-    })
-    .withFailureHandler(function(error) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.querySelector('span').textContent = 'TEST WRITE GATEWAY';
-      const message = error && error.message ? error.message : String(error || 'Pengujian gagal.');
-      result.style.display = 'block';
-      result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY — GAGAL</h5><p>❌ ' + escapeHtml(message) + '</p></div>';
-    })
-    .runSchool2GatewayTestFromWebApp();
+  google.script.run.withSuccessHandler(function(response) {
+    btn.disabled = false; btn.style.opacity = '1'; btn.querySelector('span').textContent = 'TEST WRITE GATEWAY';
+    if (!response || response.ok !== true) {
+      result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY</h5><p>❌ Gateway menolak pengujian.</p><pre>' + escapeHtml(JSON.stringify(response || {}, null, 2)) + '</pre></div>'; return;
+    }
+    result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY — PASS</h5><p><b>User:</b> ' + escapeHtml(response.user) + '</p><p><b>Role:</b> ' + escapeHtml(response.role) + '</p><p><b>Sekolah:</b> ' + escapeHtml(response.schoolId) + '</p><p><b>Target:</b> ' + escapeHtml(response.targetSheet) + '</p><p><b>school2Write:</b> PASS ✓</p><p><b>crossSchool:</b> NOT_TESTED</p><p>' + escapeHtml(response.message || 'Write Gateway berhasil.') + '</p></div>';
+  }).withFailureHandler(function(error) {
+    btn.disabled = false; btn.style.opacity = '1'; btn.querySelector('span').textContent = 'TEST WRITE GATEWAY';
+    const message = error && error.message ? error.message : String(error || 'Pengujian gagal.');
+    result.style.display = 'block'; result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY — GAGAL</h5><p>❌ ' + escapeHtml(message) + '</p></div>';
+  }).runSchool2GatewayTestFromWebApp();
 }
 
 function testCrossSchoolIsolation() {
   const btn = document.getElementById('testCrossSchoolBtn');
   const result = document.getElementById('gatewayTestResult');
   if (!btn || !result) return;
-
-  btn.disabled = true;
-  btn.style.opacity = '0.65';
-  const span = btn.querySelector('span');
-  if (span) span.textContent = 'Menguji Isolasi...';
-
-  result.style.display = 'block';
-  result.innerHTML = '<div class="card-body"><h5>TEST CROSS-SCHOOL ISOLATION</h5><p>Menguji apakah Guru Sekolah 2 dapat memalsukan schoolId...</p></div>';
-
-  google.script.run
-    .withSuccessHandler(function(response) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      if (span) span.textContent = 'TEST CROSS-SCHOOL ISOLATION';
-
-      if (!response || response.ok !== true) {
-        result.innerHTML = '<div class="card-body"><h5>TEST CROSS-SCHOOL ISOLATION — GAGAL</h5><p>❌ Pengujian gagal.</p><pre>' + escapeHtml(JSON.stringify(response || {}, null, 2)) + '</pre></div>';
-        return;
-      }
-
-      const passed = response.crossSchool === 'PASS' && response.override === 'BLOCKED';
-      result.innerHTML = '<div class="card-body">' +
-        '<h5>TEST CROSS-SCHOOL ISOLATION — ' + (passed ? 'PASS' : 'GAGAL') + '</h5>' +
-        '<p><b>User:</b> ' + escapeHtml(response.user) + '</p>' +
-        '<p><b>Role:</b> ' + escapeHtml(response.role) + '</p>' +
-        '<p><b>Actual School:</b> ' + escapeHtml(response.actualSchool) + '</p>' +
-        '<p><b>Forged School:</b> ' + escapeHtml(response.forgedSchool) + '</p>' +
-        '<p><b>Effective School:</b> ' + escapeHtml(response.effectiveSchool) + '</p>' +
-        '<p><b>School Override:</b> ' + escapeHtml(response.override) + (response.override === 'BLOCKED' ? ' ✓' : ' ❌') + '</p>' +
-        '<p><b>Cross School:</b> ' + escapeHtml(response.crossSchool) + (response.crossSchool === 'PASS' ? ' ✓' : ' ❌') + '</p>' +
-        '<p>' + escapeHtml(response.message || 'Isolasi antar sekolah berhasil diuji.') + '</p>' +
-        '</div>';
-    })
-    .withFailureHandler(function(error) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      if (span) span.textContent = 'TEST CROSS-SCHOOL ISOLATION';
-      const message = error && error.message ? error.message : String(error || 'Pengujian gagal.');
-      result.style.display = 'block';
-      result.innerHTML = '<div class="card-body"><h5>TEST CROSS-SCHOOL ISOLATION — GAGAL</h5><p>❌ ' + escapeHtml(message) + '</p></div>';
-    })
-    .testGatewayCrossSchoolAsCurrentUser();
+  btn.disabled = true; btn.style.opacity = '0.65';
+  const span = btn.querySelector('span'); if (span) span.textContent = 'Menguji Isolasi...';
+  result.style.display = 'block'; result.innerHTML = '<div class="card-body"><h5>TEST CROSS-SCHOOL ISOLATION</h5><p>Menguji apakah Guru Sekolah 2 dapat memalsukan schoolId...</p></div>';
+  google.script.run.withSuccessHandler(function(response) {
+    btn.disabled = false; btn.style.opacity = '1'; if (span) span.textContent = 'TEST CROSS-SCHOOL ISOLATION';
+    if (!response || response.ok !== true) { result.innerHTML = '<div class="card-body"><h5>TEST CROSS-SCHOOL ISOLATION — GAGAL</h5><p>❌ Pengujian gagal.</p><pre>' + escapeHtml(JSON.stringify(response || {}, null, 2)) + '</pre></div>'; return; }
+    const passed = response.crossSchool === 'PASS' && response.override === 'BLOCKED';
+    result.innerHTML = '<div class="card-body"><h5>TEST CROSS-SCHOOL ISOLATION — ' + (passed ? 'PASS' : 'GAGAL') + '</h5><p><b>User:</b> ' + escapeHtml(response.user) + '</p><p><b>Role:</b> ' + escapeHtml(response.role) + '</p><p><b>Actual School:</b> ' + escapeHtml(response.actualSchool) + '</p><p><b>Forged School:</b> ' + escapeHtml(response.forgedSchool) + '</p><p><b>Effective School:</b> ' + escapeHtml(response.effectiveSchool) + '</p><p><b>School Override:</b> ' + escapeHtml(response.override) + (response.override === 'BLOCKED' ? ' ✓' : ' ❌') + '</p><p><b>Cross School:</b> ' + escapeHtml(response.crossSchool) + (response.crossSchool === 'PASS' ? ' ✓' : ' ❌') + '</p><p>' + escapeHtml(response.message || 'Isolasi antar sekolah berhasil diuji.') + '</p></div>';
+  }).withFailureHandler(function(error) {
+    btn.disabled = false; btn.style.opacity = '1'; if (span) span.textContent = 'TEST CROSS-SCHOOL ISOLATION';
+    const message = error && error.message ? error.message : String(error || 'Pengujian gagal.'); result.style.display = 'block'; result.innerHTML = '<div class="card-body"><h5>TEST CROSS-SCHOOL ISOLATION — GAGAL</h5><p>❌ ' + escapeHtml(message) + '</p></div>';
+  }).testGatewayCrossSchoolAsCurrentUser();
 }
 
-function showSessionError(error) {
-  showLoading(false);
-  const message = error && error.message ? error.message : String(error || 'Gagal memuat sesi.');
-  document.getElementById('welcomeTitle').textContent = 'Akses belum tersedia';
-  document.getElementById('sessionInfo').textContent = message;
-}
-
-function showLoading(show) {
-  const el = document.getElementById('loading');
-  if (el) el.style.display = show ? 'block' : 'none';
-}
-
-function escapeHtml(value) {
-  return String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
-}
-
+function showSessionError(error) { showLoading(false); const message = error && error.message ? error.message : String(error || 'Gagal memuat sesi.'); document.getElementById('welcomeTitle').textContent = 'Akses belum tersedia'; document.getElementById('sessionInfo').textContent = message; }
+function showLoading(show) { const el = document.getElementById('loading'); if (el) el.style.display = show ? 'block' : 'none'; }
+function escapeHtml(value) { return String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;'); }
 window.addEventListener('load', loadSession);
 </script>
