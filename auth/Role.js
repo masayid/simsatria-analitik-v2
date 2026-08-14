@@ -1,7 +1,7 @@
-/** Resolver role user. */
+/** Resolver role user dari Runtime Auth Directory. */
 function getCurrentRole_() {
   const email = getCurrentUser_();
-  const user = findUserByEmail_(email);
+  const user = getRuntimeUserByEmail_(email);
   if (!user) throw new Error('Role user tidak ditemukan.');
   const role = clean_(user.role).toUpperCase();
   if (!Object.values(APP_CONFIG.ROLE).includes(role)) throw new Error('Role tidak valid: ' + role);
@@ -11,7 +11,7 @@ function getCurrentRole_() {
 function requireRole_(allowedRoles) {
   const role = getCurrentRole_();
   const allowed = Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles];
-  if (allowed.map(r => clean_(r).toUpperCase()).indexOf(role) < 0) {
+  if (allowed.map(function(r) { return clean_(r).toUpperCase(); }).indexOf(role) < 0) {
     throw new Error('Akses ditolak untuk role ' + role + '.');
   }
   return role;
