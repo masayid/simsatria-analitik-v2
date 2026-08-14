@@ -1,0 +1,171 @@
+<script>
+(function () {
+  const originalSelectMenu = window.selectMenu;
+
+  window.selectMenu = function (menuCode) {
+    if (String(menuCode || '').toUpperCase() === 'AGENDA_MENGAJAR') {
+      document.querySelectorAll('.nav-item').forEach(function (el) {
+        el.classList.toggle('active', el.dataset.menu === menuCode);
+      });
+      loadAgendaMengajar();
+      return;
+    }
+    if (typeof originalSelectMenu === 'function') originalSelectMenu(menuCode);
+  };
+
+  window.loadAgendaMengajar = function () {
+    const content = document.getElementById('content');
+    if (!content) return;
+
+    content.innerHTML = `
+      <section class="card">
+        <div class="card-body">
+          <div class="eyebrow">GURU</div>
+          <h3>Agenda Mengajar</h3>
+          <p class="muted">Catat agenda pembelajaran harian dengan sederhana.</p>
+
+          <form id="agendaMengajarForm" onsubmit="simpanAgendaMengajarUI(event)">
+            <div class="form-grid">
+              <div>
+                <label>Tanggal</label>
+                <input id="agendaTanggal" type="date" required>
+              </div>
+              <div>
+                <label>Sesi</label>
+                <select id="agendaSesi" required>
+                  <option value="">Pilih sesi...</option>
+                </select>
+              </div>
+              <div>
+                <label>Kelas</label>
+                <input id="agendaKelas" type="text" placeholder="Contoh: X-1" required>
+              </div>
+              <div>
+                <label>Tujuan Pembelajaran</label>
+                <textarea id="agendaTujuan" rows="3" required></textarea>
+              </div>
+              <div>
+                <label>Materi Pembelajaran</label>
+                <textarea id="agendaMateri" rows="3" required></textarea>
+              </div>
+              <div>
+                <label>DPL</label>
+                <input id="agendaDpl" type="text" placeholder="Contoh: Bernalar kritis, kreatif">
+              </div>
+              <div>
+                <label>Pengalaman Belajar</label>
+                <input id="agendaPengalaman" type="text" placeholder="Contoh: Memahami, mengaplikasi, merefleksi">
+              </div>
+              <div>
+                <label>Prinsip Pembelajaran</label>
+                <input id="agendaPrinsip" type="text" placeholder="Contoh: Berkesadaran, bermakna, menggembirakan">
+              </div>
+              <div style="grid-column:1/-1">
+                <label>Rekap Nama Siswa Tidak Masuk</label>
+                <textarea id="agendaTidakMasuk" rows="3" placeholder="Kosongkan jika semua hadir."></textarea>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+              <button id="agendaSimpanBtn" type="submit" class="primary-btn">💾 Simpan Agenda</button>
+              <button type="button" class="secondary-btn" onclick="resetAgendaMengajar()">Reset</button>
+            </div>
+          </form>
+
+          <div id="agendaStatus" style="margin-top:16px"></div>
+        </div>
+      </section>`;
+
+    const tanggal = document.getElementById('agendaTanggal');
+    if (tanggal) tanggal.value = new Date().toISOString().slice(0, 10);
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        const select = document.getElementById('agendaSesi');
+        if (!select) return;
+        (response && response.data && response.data.sesi || []).forEach(function (item) {
+          const option = document.createElement('option');
+          option.value = item;
+          option.textContent = item;
+          select.appendChild(option);
+        });
+      })
+      .withFailureHandler(function (error) {
+        showAgendaStatus('❌ ' + (error && error.message ? error.message : 'Gagal memuat pilihan sesi.'), true);
+      })
+      .getAgendaMengajarFormOptions();
+  };
+
+  window.simpanAgendaMengajarUI = function (event) {
+    event.preventDefault();
+    const btn = document.getElementById('agendaSimpanBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ Menyimpan...';
+    }
+
+    const data = {
+      tanggal: document.getElementById('agendaTanggal').value,
+      sesi: document.getElementById('agendaSesi').value,
+      kelas: document.getElementById('agendaKelas').value.trim(),
+      tujuan: document.getElementById('agendaTujuan').value.trim(),
+      materi: document.getElementById('agendaMateri').value.trim(),
+      dpl: document.getElementById('agendaDpl').value.trim(),
+      pengalaman: document.getElementById('agendaPengalaman').value.trim(),
+      prinsip: document.getElementById('agendaPrinsip').value.trim(),
+      rekapTidakMasuk: document.getElementById('agendaTidakMasuk').value.trim()
+    };
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '💾 Simpan Agenda';
+        }
+        if (!response || response.ok !== true) {
+          showAgendaStatus('❌ ' + ((response && response.message) || 'Agenda gagal disimpan.'), true);
+          return;
+        }
+        showAgendaStatus('✅ Agenda mengajar berhasil disimpan ke ' + response.data.sheet + '.', false);
+        document.getElementById('agendaTujuan').value = '';
+        document.getElementById('agendaMateri').value = '';
+        document.getElementById('agendaDpl').value = '';
+        document.getElementById('agendaPengalaman').value = '';
+        document.getElementById('agendaPrinsip').value = '';
+        document.getElementById('agendaTidakMasuk').value = '';
+      })
+      .withFailureHandler(function (error) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '💾 Simpan Agenda';
+        }
+        showAgendaStatus('❌ ' + (error && error.message ? error.message : 'Agenda gagal disimpan.'), true);
+      })
+      .simpanAgendaMengajar(data);
+  };
+
+  window.resetAgendaMengajar = function () {
+    const form = document.getElementById('agendaMengajarForm');
+    if (form) form.reset();
+    const tanggal = document.getElementById('agendaTanggal');
+    if (tanggal) tanggal.value = new Date().toISOString().slice(0, 10);
+    showAgendaStatus('', false);
+  };
+
+  function showAgendaStatus(message, error) {
+    const el = document.getElementById('agendaStatus');
+    if (!el) return;
+    el.innerHTML = message ? '<div style="padding:12px;border-radius:10px;background:' + (error ? '#fff1f1' : '#edf8f0') + '">' + escapeHtml(message) + '</div>' : '';
+  }
+})();
+</script>
+
+<style>
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.form-grid label{display:block;font-weight:600;margin-bottom:6px}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d6e2dc;border-radius:10px;background:#fff;font:inherit}
+.primary-btn,.secondary-btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+.primary-btn{background:#0b3d2e;color:#fff}.secondary-btn{background:#edf4f0;color:#173f32}
+.muted{opacity:.7}
+@media(max-width:700px){.form-grid{grid-template-columns:1fr}.form-grid>div[style*="grid-column"]{grid-column:auto!important}}
+</style>
