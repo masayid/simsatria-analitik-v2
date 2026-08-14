@@ -18,6 +18,18 @@ function renderSession(response) {
   document.getElementById('headerUser').textContent = user.nama + ' • ' + user.role;
   renderMenus(SATRIA_SESSION.menus || []);
   renderPermissions(SATRIA_SESSION.permissions || []);
+
+  // TAHAP 8.9: tombol diagnostik hanya ditampilkan untuk Guru Sekolah 2.
+  const testBtn = document.getElementById('testGatewayBtn');
+  if (testBtn) {
+    const email = String(user.email || '').toLowerCase();
+    const role = String(user.role || '').toUpperCase();
+    const schoolId = String(school.idSekolah || '').toUpperCase();
+    const showTest = email === 'kurikulum.sman3pwr@gmail.com' &&
+                     role === 'GURU' &&
+                     schoolId === 'SMANTI03PWJ';
+    testBtn.style.display = showTest ? 'block' : 'none';
+  }
 }
 
 function renderMenus(menus) {
@@ -48,6 +60,48 @@ function selectMenu(menuCode) {
 
 function loadDashboard() { window.location.hash = 'dashboard'; }
 
+function testWriteGateway() {
+  const btn = document.getElementById('testGatewayBtn');
+  const result = document.getElementById('gatewayTestResult');
+  if (!btn || !result) return;
+
+  btn.disabled = true;
+  btn.style.opacity = '0.65';
+  btn.querySelector('span').textContent = 'Menguji Gateway...';
+  result.style.display = 'block';
+  result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY</h5><p>Memproses write sebagai Guru Sekolah 2...</p></div>';
+
+  google.script.run
+    .withSuccessHandler(function(response) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.querySelector('span').textContent = 'TEST WRITE GATEWAY';
+
+      if (!response || response.ok !== true) {
+        result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY</h5><p>❌ Gateway menolak pengujian.</p><pre>' + escapeHtml(JSON.stringify(response || {}, null, 2)) + '</pre></div>';
+        return;
+      }
+
+      result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY — PASS</h5>' +
+        '<p><b>User:</b> ' + escapeHtml(response.user) + '</p>' +
+        '<p><b>Role:</b> ' + escapeHtml(response.role) + '</p>' +
+        '<p><b>Sekolah:</b> ' + escapeHtml(response.schoolId) + '</p>' +
+        '<p><b>Target:</b> ' + escapeHtml(response.targetSheet) + '</p>' +
+        '<p><b>school2Write:</b> PASS ✓</p>' +
+        '<p><b>crossSchool:</b> NOT_TESTED</p>' +
+        '<p>' + escapeHtml(response.message || 'Write Gateway berhasil.') + '</p></div>';
+    })
+    .withFailureHandler(function(error) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.querySelector('span').textContent = 'TEST WRITE GATEWAY';
+      const message = error && error.message ? error.message : String(error || 'Pengujian gagal.');
+      result.style.display = 'block';
+      result.innerHTML = '<div class="card-body"><h5>TEST WRITE GATEWAY — GAGAL</h5><p>❌ ' + escapeHtml(message) + '</p></div>';
+    })
+    .runSchool2GatewayTestFromWebApp();
+}
+
 function showSessionError(error) {
   showLoading(false);
   const message = error && error.message ? error.message : String(error || 'Gagal memuat sesi.');
@@ -61,7 +115,7 @@ function showLoading(show) {
 }
 
 function escapeHtml(value) {
-  return String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  return String(value == null ? '' : value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
 window.addEventListener('load', loadSession);
