@@ -1,9 +1,14 @@
 /**
  * MENU FUNGSIONAL: AGENDA MENGAJAR GURU
- * Versi sederhana: tampilkan form dan simpan melalui Write Gateway.
+ * Versi sederhana: simpan agenda dan bukti fisik melalui Write Gateway.
  */
 const AGENDA_MENGAJAR_MENU = 'AGENDA_GURU';
 const AGENDA_MENGAJAR_SHEET = 'TRX_AGENDA_GURU';
+const AGENDA_MENGAJAR_COLUMNS = [
+  'timestamp','id_user','nama','tanggal','sesi','kelas',
+  'tujuan_pembelajaran','materi_pembelajaran','dpl','pengalaman_belajar',
+  'prinsip_pembelajaran','rekap_siswa_tidak_masuk','bukti_fisik'
+];
 
 function simpanAgendaMengajar(data) {
   requirePermission_(APP_CONFIG.PERMISSION.INPUT, AGENDA_MENGAJAR_MENU);
@@ -18,6 +23,7 @@ function simpanAgendaMengajar(data) {
   const pengalaman = clean_(data.pengalaman);
   const prinsip = clean_(data.prinsip);
   const rekapTidakMasuk = clean_(data.rekapTidakMasuk);
+  const buktiFisik = clean_(data.buktiFisik);
 
   if (!tanggal) throw new Error('Tanggal wajib diisi.');
   if (!sesi) throw new Error('Sesi wajib dipilih.');
@@ -43,14 +49,11 @@ function simpanAgendaMengajar(data) {
     dpl,
     pengalaman,
     prinsip,
-    rekapTidakMasuk
+    rekapTidakMasuk,
+    buktiFisik
   ];
 
-  const result = saveDataViaGateway(
-    AGENDA_MENGAJAR_MENU,
-    AGENDA_MENGAJAR_SHEET,
-    row
-  );
+  const result = saveDataViaGateway(AGENDA_MENGAJAR_MENU, AGENDA_MENGAJAR_SHEET, row);
 
   return ok_({
     idUser: clean_(user.idUser || user.id_user),
@@ -58,9 +61,26 @@ function simpanAgendaMengajar(data) {
     tanggal: tanggal,
     sesi: sesi,
     kelas: kelas,
+    buktiFisik: buktiFisik,
+    columns: AGENDA_MENGAJAR_COLUMNS,
     sheet: AGENDA_MENGAJAR_SHEET,
     gateway: result
   }, 'Agenda mengajar berhasil disimpan.');
+}
+
+function simpanBuktiFisikAgendaMengajar(file) {
+  requirePermission_(APP_CONFIG.PERMISSION.UPLOAD, AGENDA_MENGAJAR_MENU);
+  if (!file || !file.base64 || !file.name) throw new Error('File bukti fisik belum dipilih.');
+  const result = uploadViaGateway(AGENDA_MENGAJAR_MENU, {
+    base64: file.base64,
+    mimeType: file.mimeType || 'application/octet-stream',
+    name: file.name
+  });
+  return ok_({
+    fileId: result.data && (result.data.id || result.data.fileId) || result.id || '',
+    fileName: result.data && (result.data.name || result.data.fileName) || result.name || file.name,
+    url: result.data && (result.data.url || result.data.fileUrl) || result.url || ''
+  }, 'Bukti fisik berhasil diunggah.');
 }
 
 function getAgendaMengajarFormOptions() {
