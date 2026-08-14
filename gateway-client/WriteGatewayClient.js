@@ -10,8 +10,12 @@ function gatewayCall_(action, payload) {
     throw new Error('Write Gateway belum dikonfigurasi.');
   }
 
-  const school = getCurrentSchool_();
-  const schoolId = school && school.id_sekolah ? school.id_sekolah : '';
+  // USER_ACCESSING tidak boleh membaca MASTER secara langsung.
+  // Ambil school context dari Runtime Auth Directory terlebih dahulu.
+  const school = getGatewayCurrentSchool_();
+  const schoolId = school && (school.idSekolah || school.id_sekolah)
+    ? (school.idSekolah || school.id_sekolah)
+    : '';
 
   if (!schoolId) {
     throw new Error('ID sekolah pengguna tidak ditemukan.');
@@ -71,6 +75,25 @@ function gatewayCall_(action, payload) {
   }
 
   return data;
+}
+
+/**
+ * Mendapatkan sekolah aktif tanpa memaksa user biasa membaca MASTER.
+ * Untuk Web App USER_ACCESSING, sumber utama adalah getSessionContext()
+ * yang membaca Runtime Auth Directory dari Script Properties.
+ * Fallback getCurrentSchool_() dipertahankan untuk konteks setup/legacy
+ * yang memang berjalan sebagai owner dan masih memiliki akses MASTER.
+ */
+function getGatewayCurrentSchool_() {
+  try {
+    const session = getSessionContext();
+    const data = session && session.ok && session.data ? session.data : session;
+    if (data && data.school) return data.school;
+  } catch (e) {
+    // Fallback hanya untuk konteks setup/legacy.
+  }
+
+  return getCurrentSchool_();
 }
 
 function gatewayPreview_(value, maxLength) {
