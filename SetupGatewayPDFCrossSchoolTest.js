@@ -54,8 +54,11 @@ function testGatewayPDFCrossSchoolAsCurrentUser() {
     '</table></body></html>'
   ].join('');
 
-  // Sengaja mengirim target palsu. gatewayCall_() akan memaksa schoolId
-  // kembali ke sekolah session user; folderId tetap dikirim sebagai negative test.
+  // SECURITY NEGATIVE TEST:
+  // Payload sengaja membawa school/folder palsu. gatewayCall_() membuang
+  // schoolId payload dan menggantinya dengan school dari session user.
+  // GatewayPDF kemudian mengabaikan seluruh field folder dari payload dan
+  // memilih folder berdasarkan schoolId efektif.
   const gatewayResult = pdfViaGateway(menu, {
     name: fileName,
     html: html,
@@ -66,38 +69,23 @@ function testGatewayPDFCrossSchoolAsCurrentUser() {
     targetFolderId: forgedFolderId
   });
 
-  if (!gatewayResult || gatewayResult.ok !== true) throw new Error('Gateway PDF menolak request: ' + (gatewayResult && gatewayResult.message ? gatewayResult.message : 'respons tidak sukses.'));
+  if (!gatewayResult || gatewayResult.ok !== true) {
+    throw new Error('Gateway PDF menolak request: ' + (gatewayResult && gatewayResult.message ? gatewayResult.message : 'respons tidak sukses.'));
+  }
 
   const data = gatewayResult.data || {};
-  const effectiveSchool = clean_(data.schoolId || data.idSekolah || actualSchool).toUpperCase();
-  const reportedFolder = clean_(data.folderId || data.driveFolderId || data.targetFolderId || '');
+  const effectiveSchool = clean_(data.schoolId || data.idSekolah || '').toUpperCase();
+  const effectiveFolderId = clean_(data.folderId || data.driveFolderId || data.targetFolderId || '');
   const fileId = data.fileId || data.id || '';
   const fileNameResult = data.fileName || data.name || (fileName + '.pdf');
   const fileUrl = data.fileUrl || data.url || '';
 
+  // Verifikasi utama tidak lagi bergantung pada DriveApp user biasa.
+  // Gateway mengembalikan metadata folder yang benar-benar dipakai saat
+  // createFile(), sehingga dapat dibandingkan dengan folder session user.
   const schoolOverrideBlocked = effectiveSchool === actualSchool && effectiveSchool !== forgedSchool;
-
-  let folderVerification = 'NOT_VERIFIED';
-  let effectiveFolder = reportedFolder;
-  if (reportedFolder) {
-    folderVerification = reportedFolder === actualFolderId && reportedFolder !== forgedFolderId ? 'PASS' : 'FAIL';
-  } else if (fileId) {
-    try {
-      const file = DriveApp.getFileById(fileId);
-      const parents = file.getParents();
-      const parentIds = [];
-      while (parents.hasNext()) parentIds.push(parents.next().getId());
-      const actualFound = parentIds.indexOf(actualFolderId) >= 0;
-      const forgedFound = parentIds.indexOf(forgedFolderId) >= 0;
-      folderVerification = actualFound && !forgedFound ? 'PASS' : 'FAIL';
-      effectiveFolder = actualFound ? '[actual school folder]' : (parentIds.length ? '[other folder]' : '[no parent reported]');
-    } catch (e) {
-      folderVerification = 'UNAVAILABLE';
-      effectiveFolder = '[folder verification unavailable for current user]';
-    }
-  }
-
-  const folderOverrideBlocked = folderVerification === 'PASS';
+  const folderOverrideBlocked = effectiveFolderId === actualFolderId && effectiveFolderId !== forgedFolderId;
+  const folderVerification = folderOverrideBlocked ? 'PASS' : 'FAIL';
   const passed = schoolOverrideBlocked && folderOverrideBlocked;
 
   const result = {
@@ -110,7 +98,7 @@ function testGatewayPDFCrossSchoolAsCurrentUser() {
     effectiveSchool: effectiveSchool,
     schoolOverride: schoolOverrideBlocked ? 'BLOCKED' : 'NOT_BLOCKED',
     forgedFolderId: '[hidden]',
-    effectiveFolder: effectiveFolder || '(Gateway tidak mengekspos folder)',
+    effectiveFolder: folderOverrideBlocked ? '[actual school folder]' : '[unexpected folder]',
     folderOverride: folderOverrideBlocked ? 'BLOCKED' : 'NOT_BLOCKED',
     folderVerification: folderVerification,
     gateway: 'PASS',
@@ -121,7 +109,7 @@ function testGatewayPDFCrossSchoolAsCurrentUser() {
     fileUrl: fileUrl,
     message: passed
       ? 'schoolId dan folderId palsu tidak dapat mengubah target PDF. PDF tetap diarahkan ke storage sekolah pengguna.'
-      : 'BAHAYA: target PDF berpotensi dipengaruhi payload cross-school atau lokasi file belum dapat diverifikasi.'
+      : 'BAHAYA: target PDF berpotensi dipengaruhi payload cross-school.'
   };
 
   Logger.log(JSON.stringify(result, null, 2));
