@@ -1,0 +1,67 @@
+<script>
+/* TAHAP 8.12 — Cross-School Upload Isolation */
+function testGatewayUploadCrossSchool() {
+  const btn = document.getElementById('testUploadCrossSchoolBtn');
+  const result = document.getElementById('gatewayTestResult');
+  if (!btn || !result) return;
+
+  const span = btn.querySelector('span');
+  let finished = false;
+  btn.disabled = true;
+  btn.style.opacity = '0.65';
+  if (span) span.textContent = 'Menguji Isolasi Upload...';
+
+  result.style.display = 'block';
+  result.innerHTML = '<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL ISOLATION</h5><p>Menguji schoolId dan folderId palsu...</p></div>';
+
+  const reset = function() {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    if (span) span.textContent = 'TEST UPLOAD CROSS-SCHOOL';
+  };
+
+  const timeoutId = setTimeout(function() {
+    if (finished) return;
+    finished = true;
+    reset();
+    result.innerHTML = '<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — TIMEOUT</h5><p>❌ Server belum mengembalikan respons. Pastikan <b>SetupGatewayUploadCrossSchoolTest.js</b> sudah dipull dan Web App dideploy ulang.</p></div>';
+  }, 30000);
+
+  google.script.run
+    .withSuccessHandler(function(response) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+      reset();
+
+      if (!response || response.ok !== true) {
+        result.innerHTML = '<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — GAGAL</h5><p>❌ Pengujian belum lulus.</p><pre>' + escapeHtml(JSON.stringify(response || {}, null, 2)) + '</pre></div>';
+        return;
+      }
+
+      result.innerHTML = '<div class="card-body">' +
+        '<h5>TEST UPLOAD CROSS-SCHOOL — PASS</h5>' +
+        '<p><b>User:</b> ' + escapeHtml(response.user) + '</p>' +
+        '<p><b>Role:</b> ' + escapeHtml(response.role) + '</p>' +
+        '<p><b>Actual School:</b> ' + escapeHtml(response.actualSchool) + '</p>' +
+        '<p><b>Forged School:</b> ' + escapeHtml(response.forgedSchool) + '</p>' +
+        '<p><b>Effective School:</b> ' + escapeHtml(response.effectiveSchool) + '</p>' +
+        '<p><b>School Override:</b> ' + escapeHtml(response.schoolOverride) + (response.schoolOverride === 'BLOCKED' ? ' ✓' : ' ❌') + '</p>' +
+        '<p><b>Folder Override:</b> ' + escapeHtml(response.folderOverride) + (response.folderOverride === 'BLOCKED' ? ' ✓' : ' ❌') + '</p>' +
+        '<p><b>Drive Upload:</b> ' + escapeHtml(response.driveUpload) + ' ✓</p>' +
+        '<p><b>Effective Folder:</b> ' + escapeHtml(response.effectiveFolderId || '-') + '</p>' +
+        '<p><b>File:</b> ' + escapeHtml(response.fileName || '-') + '</p>' +
+        '<p>' + escapeHtml(response.message || 'Cross-school upload berhasil diuji.') + '</p>' +
+      '</div>';
+    })
+    .withFailureHandler(function(error) {
+      if (finished) return;
+      finished = true;
+      clearTimeout(timeoutId);
+      reset();
+      const message = error && error.message ? error.message : String(error || 'Pengujian gagal.');
+      result.innerHTML = '<div class="card-body"><h5>TEST UPLOAD CROSS-SCHOOL — GAGAL</h5><p>❌ ' + escapeHtml(message) + '</p></div>';
+    })
+    .testGatewayUploadCrossSchoolAsCurrentUser();
+}
+</script>
