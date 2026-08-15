@@ -3,6 +3,9 @@
  *
  * Pengaturan MASTER_* hanya boleh diakses oleh OWNER aplikasi.
  * Proteksi dilakukan di server, bukan hanya disembunyikan dari frontend.
+ *
+ * Semua endpoint mengembalikan format ok_({data}, message) agar konsisten
+ * dengan google.script.run pada frontend.
  */
 
 function requireMasterOwner_() {
@@ -43,21 +46,40 @@ function getMasterSheetData(sheetName) {
 
   const headers = MASTER_HEADERS[sheetName] || [];
   const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { sheet: sheetName, headers: headers, rows: [] };
 
-  const values = sheet.getRange(1, 1, lastRow, headers.length).getValues();
-  const actualHeaders = values[0].map(clean_);
-  const rows = values.slice(1).filter(function(row) {
-    return row.some(function(value) { return clean_(value) !== ''; });
-  }).map(function(row, index) {
-    const obj = { _row: index + 2 };
-    actualHeaders.forEach(function(header, col) {
-      if (header) obj[header] = row[col];
+  if (lastRow < 2) {
+    return ok_({
+      sheet: sheetName,
+      headers: headers,
+      rows: []
+    }, 'Data MASTER berhasil dimuat.');
+  }
+
+  const columnCount = Math.max(headers.length, sheet.getLastColumn());
+  const values = sheet.getRange(1, 1, lastRow, columnCount).getValues();
+  const actualHeaders = headers.slice();
+
+  // Gunakan header MASTER yang sudah didefinisikan sebagai kontrak utama.
+  // Header tambahan di sheet tidak disentuh dan tidak ikut ditampilkan.
+  const rows = values.slice(1)
+    .filter(function(row) {
+      return row.slice(0, headers.length).some(function(value) {
+        return clean_(value) !== '';
+      });
+    })
+    .map(function(row, index) {
+      const obj = { _row: index + 2 };
+      actualHeaders.forEach(function(header, col) {
+        if (header) obj[header] = row[col];
+      });
+      return obj;
     });
-    return obj;
-  });
 
-  return { sheet: sheetName, headers: actualHeaders, rows: rows };
+  return ok_({
+    sheet: sheetName,
+    headers: actualHeaders,
+    rows: rows
+  }, 'Data MASTER berhasil dimuat.');
 }
 
 function saveMasterSheetRow(sheetName, rowData) {
@@ -73,7 +95,9 @@ function saveMasterSheetRow(sheetName, rowData) {
 
   const headers = MASTER_HEADERS[sheetName] || [];
   const data = rowData || {};
-  const values = headers.map(function(header) { return data[header] == null ? '' : data[header]; });
+  const values = headers.map(function(header) {
+    return data[header] == null ? '' : data[header];
+  });
   const rowNumber = Number(data._row || 0);
 
   if (rowNumber >= 2 && rowNumber <= sheet.getMaxRows()) {
@@ -96,7 +120,9 @@ function deleteMasterSheetRow(sheetName, rowNumber) {
   const ss = getMasterSpreadsheet_();
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) throw new Error('Sheet ' + sheetName + ' belum tersedia.');
-  if (row < 2 || row > sheet.getLastRow()) throw new Error('Baris MASTER tidak valid.');
+  if (row < 2 || row > sheet.getLastRow()) {
+    throw new Error('Baris MASTER tidak valid.');
+  }
 
   sheet.deleteRow(row);
   return getMasterSheetData(sheetName);
