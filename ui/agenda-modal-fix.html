@@ -1,0 +1,69 @@
+<script>
+(function(){
+  var originalOpen = window.openAgendaModal;
+  var originalClose = window.closeAgendaModal;
+  var wired = false;
+
+  function getModal(){ return document.getElementById('agendaModal'); }
+
+  function wireModal(){
+    var modal=getModal();
+    if(!modal || wired) return;
+    wired=true;
+
+    var closeBtn=modal.querySelector('.btn-close');
+    if(closeBtn){
+      closeBtn.removeAttribute('data-bs-dismiss');
+      closeBtn.classList.remove('btn-close');
+      closeBtn.classList.add('agenda-modal-close');
+      closeBtn.innerHTML='&times;';
+      closeBtn.setAttribute('aria-label','Tutup');
+      closeBtn.onclick=function(e){e.preventDefault();window.closeAgendaModal();};
+    }
+
+    modal.addEventListener('click',function(e){
+      if(e.target===modal) window.closeAgendaModal();
+    });
+  }
+
+  window.openAgendaModal=function(row){
+    var modal=getModal();
+    if(!modal){
+      if(typeof originalOpen==='function') return originalOpen(row);
+      return;
+    }
+
+    /* Jalankan fungsi lama agar data tambah/edit tetap diisi oleh AgendaMengajar.js. */
+    if(typeof originalOpen==='function'){
+      try{ originalOpen(row); }catch(e){}
+    }
+
+    wireModal();
+    modal.classList.add('agenda-modal-open');
+    modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('agenda-modal-body-open');
+
+    var body=modal.querySelector('.modal-body');
+    if(body) body.scrollTop=0;
+  };
+
+  window.closeAgendaModal=function(){
+    var modal=getModal();
+    if(!modal) return;
+    modal.classList.remove('agenda-modal-open');
+    modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('agenda-modal-body-open');
+    if(typeof originalClose==='function'){
+      try{ originalClose(); }catch(e){}
+    }
+  };
+
+  document.addEventListener('keydown',function(e){
+    var modal=getModal();
+    if(modal && modal.classList.contains('agenda-modal-open') && e.key==='Escape'){
+      e.preventDefault();
+      window.closeAgendaModal();
+    }
+  });
+})();
+</script>
