@@ -5,9 +5,51 @@ function getCurrentUser_() {
   return email.toLowerCase();
 }
 
+/**
+ * OWNER aplikasi ditentukan oleh Script Property SETUP_OWNER_EMAIL.
+ * OWNER tidak wajib menjadi baris pada MASTER_USER.
+ */
+function isAppOwner_(email) {
+  const target = clean_(email).toLowerCase();
+  const owner = clean_(PropertiesService.getScriptProperties()
+    .getProperty(APP_CONFIG.PROP.SETUP_OWNER_EMAIL)).toLowerCase();
+  return !!target && !!owner && target === owner;
+}
+
 /** Runtime authentication untuk deployment USER_ACCESSING. */
 function getSessionContext() {
   const email = getCurrentUser_();
+
+  // OWNER aplikasi adalah akun khusus pengelola MASTER.
+  // Tidak dipaksa masuk MASTER_USER karena OWNER bukan akun sekolah.
+  if (isAppOwner_(email)) {
+    return ok_({
+      user: {
+        idUser: 'OWNER',
+        nama: 'Owner SIM SATRIA',
+        email: email,
+        role: 'OWNER',
+        idSekolah: ''
+      },
+      school: {
+        idSekolah: '',
+        npsn: '',
+        namaSekolah: 'MASTER / Semua Sekolah',
+        spreadsheetId: '',
+        driveFolderId: ''
+      },
+      permissions: [APP_CONFIG.PERMISSION.ADMIN],
+      menus: [{
+        kode_menu: 'MASTER_ADMIN',
+        nama_menu: 'Pengaturan MASTER',
+        parent_id: '',
+        urutan: 0,
+        icon: '⚙',
+        aktif: 'TRUE'
+      }]
+    }, 'Sesi OWNER aktif.');
+  }
+
   const user = getRuntimeUserByEmail_(email);
   if (!user || clean_(user.status).toUpperCase() !== 'ACTIVE') {
     throw new Error('User belum terdaftar atau status user tidak ACTIVE.');
