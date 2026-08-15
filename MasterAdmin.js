@@ -2,19 +2,14 @@
  * SIM SATRIA — MASTER ADMIN
  *
  * Pengaturan MASTER_* hanya boleh diakses oleh OWNER aplikasi.
- * Proteksi dilakukan di server, bukan hanya disembunyikan dari frontend.
- *
- * Semua endpoint mengembalikan format ok_({data}, message) agar konsisten
- * dengan google.script.run pada frontend.
+ * MASTER_USER ditampilkan dari sheet USERS pada spreadsheet sekolah masing-masing.
  */
 
 function requireMasterOwner_() {
   const activeEmail = clean_(Session.getActiveUser().getEmail()).toLowerCase();
-
   if (!isAppOwner_(activeEmail)) {
     throw new Error('Pengaturan MASTER hanya dapat diakses oleh OWNER aplikasi.');
   }
-
   return activeEmail;
 }
 
@@ -40,32 +35,33 @@ function getMasterSheetData(sheetName) {
     throw new Error('Sheet MASTER tidak diizinkan: ' + sheetName);
   }
 
+  // MASTER_USER bukan tabel sumber akun. Tampilkan gabungan USERS sekolah.
+  if (sheetName === MASTER.USER) {
+    return ok_({
+      sheet: sheetName,
+      source: SCHOOL_USERS_SHEET,
+      readOnly: true,
+      headers: ['id_user','id_sekolah','npsn','nama_sekolah','nama','email','role','status'],
+      rows: getAllSchoolUsers_()
+    }, 'Data user sekolah berhasil dimuat dari USERS.');
+  }
+
   const ss = getMasterSpreadsheet_();
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) throw new Error('Sheet ' + sheetName + ' belum tersedia.');
 
   const headers = MASTER_HEADERS[sheetName] || [];
   const lastRow = sheet.getLastRow();
-
   if (lastRow < 2) {
-    return ok_({
-      sheet: sheetName,
-      headers: headers,
-      rows: []
-    }, 'Data MASTER berhasil dimuat.');
+    return ok_({sheet: sheetName, headers: headers, rows: []}, 'Data MASTER berhasil dimuat.');
   }
 
   const columnCount = Math.max(headers.length, sheet.getLastColumn());
   const values = sheet.getRange(1, 1, lastRow, columnCount).getValues();
   const actualHeaders = headers.slice();
-
-  // Gunakan header MASTER yang sudah didefinisikan sebagai kontrak utama.
-  // Header tambahan di sheet tidak disentuh dan tidak ikut ditampilkan.
   const rows = values.slice(1)
     .filter(function(row) {
-      return row.slice(0, headers.length).some(function(value) {
-        return clean_(value) !== '';
-      });
+      return row.slice(0, headers.length).some(function(value) { return clean_(value) !== ''; });
     })
     .map(function(row, index) {
       const obj = { _row: index + 2 };
@@ -75,11 +71,7 @@ function getMasterSheetData(sheetName) {
       return obj;
     });
 
-  return ok_({
-    sheet: sheetName,
-    headers: actualHeaders,
-    rows: rows
-  }, 'Data MASTER berhasil dimuat.');
+  return ok_({sheet: sheetName, headers: actualHeaders, rows: rows}, 'Data MASTER berhasil dimuat.');
 }
 
 function saveMasterSheetRow(sheetName, rowData) {
@@ -87,6 +79,11 @@ function saveMasterSheetRow(sheetName, rowData) {
   const allowed = Object.keys(MASTER).map(function(key) { return MASTER[key]; });
   if (allowed.indexOf(sheetName) === -1) {
     throw new Error('Sheet MASTER tidak diizinkan: ' + sheetName);
+  }
+
+  // USERS dikelola di spreadsheet sekolah, bukan dari MASTER.
+  if (sheetName === MASTER.USER) {
+    throw new Error('MASTER_USER bersifat read-only. Kelola Guru/Karyawan/Siswa pada sheet USERS sekolah masing-masing.');
   }
 
   const ss = getMasterSpreadsheet_();
@@ -116,13 +113,15 @@ function deleteMasterSheetRow(sheetName, rowNumber) {
     throw new Error('Sheet MASTER tidak diizinkan: ' + sheetName);
   }
 
+  if (sheetName === MASTER.USER) {
+    throw new Error('MASTER_USER bersifat read-only. Kelola user pada sheet USERS sekolah masing-masing.');
+  }
+
   const row = Number(rowNumber);
   const ss = getMasterSpreadsheet_();
   const sheet = ss.getSheetByName(sheetName);
   if (!sheet) throw new Error('Sheet ' + sheetName + ' belum tersedia.');
-  if (row < 2 || row > sheet.getLastRow()) {
-    throw new Error('Baris MASTER tidak valid.');
-  }
+  if (row < 2 || row > sheet.getLastRow()) throw new Error('Baris MASTER tidak valid.');
 
   sheet.deleteRow(row);
   return getMasterSheetData(sheetName);
