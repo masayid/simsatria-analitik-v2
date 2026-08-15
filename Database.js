@@ -1,9 +1,10 @@
 /**
  * DATABASE / MASTER SERVICE
  *
- * Tahap 5: konfigurasi MASTER secara operasional.
- * Semua MASTER_* berada pada satu Spreadsheet pusat.
- * Data sekolah dan user dipisahkan dengan id_sekolah.
+ * MASTER_* berada pada satu Spreadsheet pusat.
+ * MASTER_SEKOLAH menjadi directory sekolah.
+ * Data akun Guru/Karyawan/Siswa TIDAK lagi disimpan di MASTER_USER.
+ * Sumber akun adalah sheet USERS pada spreadsheet masing-masing sekolah.
  */
 const MASTER = Object.freeze({
   SEKOLAH: 'MASTER_SEKOLAH',
@@ -29,7 +30,6 @@ function getMasterSpreadsheet_() {
   return SpreadsheetApp.openById(id);
 }
 
-/** Setup-only: jalankan manual dari editor Apps Script. */
 function setMasterSpreadsheetId_(spreadsheetId) {
   requireValue_(spreadsheetId, 'MASTER_SPREADSHEET_ID');
   const ss = SpreadsheetApp.openById(clean_(spreadsheetId));
@@ -37,7 +37,6 @@ function setMasterSpreadsheetId_(spreadsheetId) {
   return ok_({spreadsheetId:ss.getId(), name:ss.getName()}, 'MASTER_SPREADSHEET_ID tersimpan.');
 }
 
-/** Setup-only: jalankan manual dari editor Apps Script sebelum aplikasi digunakan. */
 function setSetupOwnerEmail_(email) {
   const value = clean_(email).toLowerCase();
   if (!value || !value.includes('@')) throw new Error('Email setup owner tidak valid.');
@@ -47,7 +46,6 @@ function setSetupOwnerEmail_(email) {
   return ok_({email:value}, 'SETUP_OWNER_EMAIL tersimpan.');
 }
 
-/** Setup-only: reset manual dari editor Apps Script. */
 function resetSetupOwnerEmail_() {
   PropertiesService.getScriptProperties().deleteProperty(APP_CONFIG.PROP.SETUP_OWNER_EMAIL);
   return ok_(null, 'SETUP_OWNER_EMAIL dihapus. Set kembali sebelum aplikasi digunakan.');
@@ -71,7 +69,6 @@ function getSetupStatus() {
   });
 }
 
-/** Setup-only: bootstrap MASTER dari editor Apps Script. */
 function initializeSystem_() {
   requireSetupAccess_();
   const master = initializeMaster_();
@@ -112,10 +109,12 @@ function readSheetObjects_(ss, sheetName) {
     .map(row => Object.fromEntries(headers.map((header,i) => [header,row[i]])));
 }
 
+/**
+ * Resolver akun aplikasi.
+ * Sumber utama: USERS pada spreadsheet sekolah masing-masing.
+ */
 function findUserByEmail_(email) {
-  const target = clean_(email).toLowerCase();
-  return readSheetObjects_(getMasterSpreadsheet_(), MASTER.USER)
-    .find(row => clean_(row.email).toLowerCase() === target) || null;
+  return findUserByEmailFromSchoolUsers_(email);
 }
 
 function findSchoolById_(id) {
@@ -190,7 +189,6 @@ function seedMaster_(ss) {
   }
 }
 
-/** Hanya akun SETUP_OWNER_EMAIL yang boleh mengubah MASTER. */
 function requireSetupAccess_() {
   const configured=PropertiesService.getScriptProperties().getProperty(APP_CONFIG.PROP.SETUP_OWNER_EMAIL);
   if (!configured) throw new Error('SETUP_OWNER_EMAIL belum dikonfigurasi. Jalankan setSetupOwnerEmail_() dari editor Apps Script.');
@@ -242,35 +240,18 @@ function updateSchoolStatus(idSekolah,status) {
   throw new Error('Sekolah tidak ditemukan.');
 }
 
+/**
+ * MASTER_USER dipertahankan hanya sebagai struktur kompatibilitas.
+ * Akun baru harus dibuat pada sheet USERS sekolah terkait.
+ */
 function registerUser(data) {
   requireSetupAccess_();
-  requireValue_(data&&data.id_user,'id_user'); requireValue_(data&&data.id_sekolah,'id_sekolah');
-  requireValue_(data&&data.nama,'nama'); requireValue_(data&&data.email,'email'); requireValue_(data&&data.role,'role');
-  const role=clean_(data.role).toUpperCase(), email=clean_(data.email).toLowerCase();
-  if (!Object.values(APP_CONFIG.ROLE).includes(role)) throw new Error('Role tidak valid: '+role);
-  if (!findSchoolById_(data.id_sekolah)) throw new Error('Sekolah tidak ditemukan atau tidak ACTIVE.');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Format email tidak valid.');
-  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.USER), rows=readSheetObjects_(ss,MASTER.USER);
-  if (rows.some(row=>clean_(row.email).toLowerCase()===email)) throw new Error('Email user sudah terdaftar.');
-  if (rows.some(row=>clean_(row.id_user).toUpperCase()===clean_(data.id_user).toUpperCase())) throw new Error('id_user sudah terdaftar.');
-  sh.appendRow([clean_(data.id_user),clean_(data.id_sekolah).toUpperCase(),clean_(data.nama),email,role,APP_CONFIG.STATUS.ACTIVE]);
-  return ok_({idUser:clean_(data.id_user),email:email,role:role,idSekolah:clean_(data.id_sekolah).toUpperCase()},'User berhasil didaftarkan.');
+  throw new Error('MASTER_USER bukan sumber user. Tambahkan Guru/Karyawan/Siswa pada sheet USERS di spreadsheet sekolah masing-masing.');
 }
 
 function updateUserStatus(email,status) {
   requireSetupAccess_();
-  const value=clean_(status).toUpperCase();
-  if (![APP_CONFIG.STATUS.ACTIVE,APP_CONFIG.STATUS.INACTIVE].includes(value)) throw new Error('Status user tidak valid.');
-  const ss=getMasterSpreadsheet_(), sh=ss.getSheetByName(MASTER.USER), values=sh.getDataRange().getValues();
-  const emailCol=values[0].map(clean_).indexOf('email'), statusCol=values[0].map(clean_).indexOf('status');
-  if(emailCol<0||statusCol<0) throw new Error('Header MASTER_USER tidak lengkap.');
-  for(let r=1;r<values.length;r++) {
-    if(clean_(values[r][emailCol]).toLowerCase()===clean_(email).toLowerCase()) {
-      sh.getRange(r+1,statusCol+1).setValue(value);
-      return ok_({email:clean_(email).toLowerCase(),status:value},'Status user diperbarui.');
-    }
-  }
-  throw new Error('User tidak ditemukan.');
+  throw new Error('MASTER_USER bukan sumber user. Ubah status user pada sheet USERS di spreadsheet sekolah masing-masing.');
 }
 
 function addMenu(menu) {
@@ -323,11 +304,25 @@ function revokeMenuPermission(role,menuCode,permissions) {
   return ok_({role:roleCode,menu:menu,permissions:Array.from(normalized)},'Permission menu dicabut.');
 }
 
-function listMasterSchools() { requireSetupAccess_(); return ok_(readSheetObjects_(getMasterSpreadsheet_(),MASTER.SEKOLAH)); }
-function listMasterUsers(idSekolah) {
-  requireSetupAccess_(); const rows=readSheetObjects_(getMasterSpreadsheet_(),MASTER.USER), target=clean_(idSekolah).toUpperCase();
-  return ok_(target ? rows.filter(row=>clean_(row.id_sekolah).toUpperCase()===target) : rows);
+function listMasterSchools() {
+  requireSetupAccess_();
+  return ok_(readSheetObjects_(getMasterSpreadsheet_(),MASTER.SEKOLAH));
 }
+
+/**
+ * MASTER_USER kini hanya tampilan gabungan USERS seluruh sekolah ACTIVE.
+ * Tidak ada data yang ditulis ke MASTER_USER.
+ */
+function listMasterUsers(idSekolah) {
+  requireSetupAccess_();
+  let rows = getAllSchoolUsers_();
+  const target = clean_(idSekolah).toUpperCase();
+  if (target) rows = rows.filter(function(row) {
+    return clean_(row.id_sekolah).toUpperCase() === target;
+  });
+  return ok_(rows);
+}
+
 function listMasterMenus() { requireSetupAccess_(); return ok_(readSheetObjects_(getMasterSpreadsheet_(),MASTER.MENU)); }
 function listRolePermissions(role) {
   requireSetupAccess_(); const rows=readSheetObjects_(getMasterSpreadsheet_(),MASTER.ROLE_PERMISSION), target=clean_(role).toUpperCase();
@@ -337,5 +332,6 @@ function listRolePermissions(role) {
 function getMasterSummary() {
   requireSetupAccess_();
   const ss=getMasterSpreadsheet_(), count=name=>readSheetObjects_(ss,name).length;
-  return ok_({spreadsheetId:ss.getId(),spreadsheetName:ss.getName(),sekolah:count(MASTER.SEKOLAH),user:count(MASTER.USER),role:count(MASTER.ROLE),permission:count(MASTER.PERMISSION),rolePermission:count(MASTER.ROLE_PERMISSION),menu:count(MASTER.MENU)});
+  const userCount = getAllSchoolUsers_().length;
+  return ok_({spreadsheetId:ss.getId(),spreadsheetName:ss.getName(),sekolah:count(MASTER.SEKOLAH),user:userCount,role:count(MASTER.ROLE),permission:count(MASTER.PERMISSION),rolePermission:count(MASTER.ROLE_PERMISSION),menu:count(MASTER.MENU)});
 }
