@@ -29,16 +29,13 @@
         </section>
         <?!= include('ui/masteradmin'); ?>
         <?!= include('ui/adminsekolah'); ?>
+        <?!= include('ui/kepalaSekolah'); ?>
       </main>
     </div>
     <?!= include('ui/modal'); ?>
   </div>
   <?!= include('ui/js'); ?>
   <script>
-    // ui/js menyimpan SATRIA_SESSION sebagai lexical variable.
-    // Jangan menyalin nilainya sekali saja karena saat script ini berjalan
-    // session biasanya masih null dan baru terisi secara asynchronous.
-    // Gunakan getter agar modul sekolah selalu membaca session terbaru.
     try {
       Object.defineProperty(window, 'SATRIA_SESSION', {
         configurable: true,
@@ -47,13 +44,9 @@
         set: function(value){ SATRIA_SESSION = value; }
       });
     } catch (e) {
-      // Fallback hanya bila browser tidak mengizinkan defineProperty.
       window.SATRIA_SESSION = (typeof SATRIA_SESSION !== 'undefined') ? SATRIA_SESSION : null;
     }
 
-    // ADMIN_SEKOLAH > Kelola Siswa harus menjadi halaman penuh.
-    // Dashboard/welcome dan kartu Akses Aplikasi tidak boleh tetap terlihat
-    // di belakang panel SISWA.
     (function bindAdminSiswaPageGuard_(){
       var originalLoad = window.loadAdminSiswa;
       if (typeof originalLoad !== 'function') return;
@@ -68,6 +61,7 @@
       };
     })();
   </script>
+  <?!= include('ui/kepalaSekolah_js'); ?>
   <?!= include('ui/karyawan'); ?>
   <?!= include('ui/agendaguru'); ?>
 </body>
