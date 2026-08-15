@@ -1,7 +1,16 @@
 /** Allowlist operasi Write Gateway. */
 function gatewayRequireAction_(action, payload) {
-  const allowed = ['SPREADSHEET_APPEND', 'DRIVE_UPLOAD', 'PDF_CREATE'];
+  const allowed = ['AUTH_LOOKUP_USER', 'SPREADSHEET_APPEND', 'DRIVE_UPLOAD', 'PDF_CREATE'];
   if (allowed.indexOf(action) < 0) throw new Error('Action gateway tidak diizinkan.');
+
+  // Lookup user adalah operasi read-only yang sengaja tidak menerima
+  // schoolId dari client. Gateway menentukan sekolah dari sumber MASTER/USERS.
+  if (action === 'AUTH_LOOKUP_USER') {
+    if (!payload || !gatewayClean_(payload.email)) {
+      throw new Error('Email user wajib dikirim.');
+    }
+    return;
+  }
 
   const schoolId = gatewayClean_(payload && payload.schoolId).toUpperCase();
   if (!schoolId) throw new Error('schoolId wajib dikirim.');
