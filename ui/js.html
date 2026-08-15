@@ -1,74 +1,15 @@
 <script>
-let SATRIA_SESSION = null;
-let SATRIA_SESSION_STARTED = false;
-let SATRIA_SESSION_TIMEOUT = null;
-
-function loadSession() {
-  if (SATRIA_SESSION_STARTED) return;
-  SATRIA_SESSION_STARTED = true;
-  showLoading(true);
-  SATRIA_SESSION_TIMEOUT = setTimeout(function () { showSessionError({message:'Waktu memuat sesi habis. Silakan refresh Web App atau deploy ulang versi terbaru.'}); }, 30000);
-  try { google.script.run.withSuccessHandler(renderSession).withFailureHandler(showSessionError).getSessionContext(); }
-  catch (error) { showSessionError(error); }
-}
-
-function renderSession(response) {
-  clearSessionTimeout_(); showLoading(false);
-  if (!response || response.ok !== true || !response.data) return showSessionError({message:response&&response.message?response.message:'Sesi tidak valid.'});
-  try {
-    SATRIA_SESSION=response.data;
-    const user=SATRIA_SESSION.user||{}, school=SATRIA_SESSION.school||{};
-    const welcome=document.getElementById('welcomeTitle'), info=document.getElementById('sessionInfo'), schoolInfo=document.getElementById('schoolInfo'), headerUser=document.getElementById('headerUser');
-    if(welcome)welcome.textContent='Selamat datang, '+(user.nama||'Pengguna');
-    if(info)info.textContent=(user.email||'')+' • '+(user.role||'');
-    if(schoolInfo)schoolInfo.innerHTML='<strong>'+escapeHtml(school.namaSekolah||'')+'</strong><br>NPSN: '+escapeHtml(school.npsn||'')+' • ID: '+escapeHtml(school.idSekolah||'');
-    if(headerUser)headerUser.textContent=(user.nama||'')+' • '+(user.role||'');
-    renderMenus(SATRIA_SESSION.menus||[]); renderPermissions(SATRIA_SESSION.permissions||[]); initMasterAdmin(); initAdminSekolahNav_();
-  } catch(error){showSessionError(error);}
-}
-
-function initAdminSekolahNav_(){
-  const user=SATRIA_SESSION&&SATRIA_SESSION.user||{};
-  const isAdmin=String(user.role||'').toUpperCase()==='ADMIN_SEKOLAH';
-  const section=document.getElementById('schoolAdminSection'), nav=document.getElementById('schoolAdminNav');
-  if(section)section.style.display=isAdmin?'':'none';
-  if(nav)nav.style.display=isAdmin?'':'none';
-}
-
+let SATRIA_SESSION=null,SATRIA_SESSION_STARTED=false,SATRIA_SESSION_TIMEOUT=null;
+function loadSession(){if(SATRIA_SESSION_STARTED)return;SATRIA_SESSION_STARTED=true;showLoading(true);SATRIA_SESSION_TIMEOUT=setTimeout(function(){showSessionError({message:'Waktu memuat sesi habis. Silakan refresh Web App atau deploy ulang versi terbaru.'});},30000);try{google.script.run.withSuccessHandler(renderSession).withFailureHandler(showSessionError).getSessionContext();}catch(error){showSessionError(error);}}
+function renderSession(response){clearSessionTimeout_();showLoading(false);if(!response||response.ok!==true||!response.data)return showSessionError({message:response&&response.message?response.message:'Sesi tidak valid.'});try{SATRIA_SESSION=response.data;const user=SATRIA_SESSION.user||{},school=SATRIA_SESSION.school||{};const welcome=document.getElementById('welcomeTitle'),info=document.getElementById('sessionInfo'),schoolInfo=document.getElementById('schoolInfo'),headerUser=document.getElementById('headerUser');if(welcome)welcome.textContent='Selamat datang, '+(user.nama||'Pengguna');if(info)info.textContent=(user.email||'')+' • '+(user.role||'');if(schoolInfo)schoolInfo.innerHTML='<strong>'+escapeHtml(school.namaSekolah||'')+'</strong><br>NPSN: '+escapeHtml(school.npsn||'')+' • ID: '+escapeHtml(school.idSekolah||'');if(headerUser)headerUser.textContent=(user.nama||'')+' • '+(user.role||'');renderMenus(SATRIA_SESSION.menus||[]);renderPermissions(SATRIA_SESSION.permissions||[]);initMasterAdmin();initAdminSekolahNav_();}catch(error){showSessionError(error);}}
+function initAdminSekolahNav_(){const user=SATRIA_SESSION&&SATRIA_SESSION.user||{},isAdmin=String(user.role||'').toUpperCase()==='ADMIN_SEKOLAH';let section=document.getElementById('schoolAdminSection'),nav=document.getElementById('schoolAdminNav');if(isAdmin&&!nav){const sidebar=document.getElementById('sidebar'),dynamic=document.getElementById('dynamicMenus');if(sidebar){section=document.createElement('div');section.id='schoolAdminSection';section.style.cssText='margin-top:18px';section.innerHTML='<div class="nav-title">ADMINISTRASI SEKOLAH</div><button id="schoolAdminNav" class="nav-item" data-menu="ADMIN_SEKOLAH">⚙ <span>Admin Sekolah</span></button>';sidebar.querySelector('.sidebar-nav')?.appendChild(section);nav=document.getElementById('schoolAdminNav');if(nav)nav.onclick=function(){selectMenu('ADMIN_SEKOLAH');};}}if(section)section.style.display=isAdmin?'none':'none';if(nav)nav.style.display=isAdmin?'':'none';if(section&&isAdmin)section.style.display='';}
 function clearSessionTimeout_(){if(SATRIA_SESSION_TIMEOUT){clearTimeout(SATRIA_SESSION_TIMEOUT);SATRIA_SESSION_TIMEOUT=null;}}
-
-function renderMenus(menus){
-  const box=document.getElementById('dynamicMenus');if(!box)return;box.innerHTML='';
-  (Array.isArray(menus)?menus:[]).filter(function(m){return String(m.kode_menu||'').toUpperCase()!=='DASHBOARD';}).sort(function(a,b){return Number(a.urutan||0)-Number(b.urutan||0);}).forEach(function(menu){
-    const btn=document.createElement('button');btn.className='nav-item';btn.dataset.menu=menu.kode_menu||'';btn.innerHTML=escapeHtml(menu.icon||'•')+' <span>'+escapeHtml(menu.nama_menu||menu.kode_menu||'')+'</span>';btn.onclick=function(){selectMenu(menu.kode_menu);};box.appendChild(btn);
-  });
-}
-
-function renderPermissions(permissions){
-  const box=document.getElementById('permissionGrid');if(!box)return;
-  const labels=[['READ','Baca'],['INPUT','Input/Simpan'],['UPLOAD','Upload'],['PDF','PDF'],['ADMIN','Administrasi']];
-  const allowed=new Set((Array.isArray(permissions)?permissions:[]).map(function(p){return String(p).toUpperCase();}));
-  box.innerHTML=labels.map(function(item){const code=item[0],label=item[1],yes=allowed.has(code);return '<div class="permission-card '+(yes?'allowed':'blocked')+'"><b>'+code+'</b><span>'+label+'</span><strong>'+(yes?'✓':'—')+'</strong></div>';}).join('');
-}
-
-function selectMenu(menuCode){
-  document.querySelectorAll('.nav-item').forEach(function(el){el.classList.toggle('active',el.dataset.menu===menuCode);});
-  if(menuCode==='DASHBOARD')return loadDashboard();
-  if(menuCode==='MASTER_ADMIN')return loadMasterAdmin();
-  if(menuCode==='ADMIN_SEKOLAH')return loadAdminSekolah();
-  const master=document.getElementById('masterAdminPanel');if(master)master.style.display='none';
-  const admin=document.getElementById('adminSekolahPanel');if(admin)admin.style.display='none';
-  const welcome=document.getElementById('welcome'),permission=document.getElementById('permissionSection');if(welcome)welcome.style.display='';if(permission)permission.style.display='';
-  const content=document.getElementById('content');if(!content)return;
-  content.querySelectorAll('.dynamic-content-section').forEach(function(el){el.remove();});
-  const section=document.createElement('section');section.className='card dynamic-content-section';section.innerHTML='<div class="card-body"><div class="eyebrow">MENU</div><h3>'+escapeHtml(menuCode)+'</h3><p>Modul siap dihubungkan pada tahap migrasi menu SIM SATRIA.</p></div>';content.appendChild(section);
-}
-
+function renderMenus(menus){const box=document.getElementById('dynamicMenus');if(!box)return;box.innerHTML='';(Array.isArray(menus)?menus:[]).filter(function(m){return String(m.kode_menu||'').toUpperCase()!=='DASHBOARD';}).sort(function(a,b){return Number(a.urutan||0)-Number(b.urutan||0);}).forEach(function(menu){const btn=document.createElement('button');btn.className='nav-item';btn.dataset.menu=menu.kode_menu||'';btn.innerHTML=escapeHtml(menu.icon||'•')+' <span>'+escapeHtml(menu.nama_menu||menu.kode_menu||'')+'</span>';btn.onclick=function(){selectMenu(menu.kode_menu);};box.appendChild(btn);});}
+function renderPermissions(permissions){const box=document.getElementById('permissionGrid');if(!box)return;const labels=[['READ','Baca'],['INPUT','Input/Simpan'],['UPLOAD','Upload'],['PDF','PDF'],['ADMIN','Administrasi']],allowed=new Set((Array.isArray(permissions)?permissions:[]).map(function(p){return String(p).toUpperCase();}));box.innerHTML=labels.map(function(item){const code=item[0],label=item[1],yes=allowed.has(code);return '<div class="permission-card '+(yes?'allowed':'blocked')+'"><b>'+code+'</b><span>'+label+'</span><strong>'+(yes?'✓':'—')+'</strong></div>';}).join('');}
+function selectMenu(menuCode){document.querySelectorAll('.nav-item').forEach(function(el){el.classList.toggle('active',el.dataset.menu===menuCode);});if(menuCode==='DASHBOARD')return loadDashboard();if(menuCode==='MASTER_ADMIN')return loadMasterAdmin();if(menuCode==='ADMIN_SEKOLAH')return loadAdminSekolah();const master=document.getElementById('masterAdminPanel');if(master)master.style.display='none';const admin=document.getElementById('adminSekolahPanel');if(admin)admin.style.display='none';const welcome=document.getElementById('welcome'),permission=document.getElementById('permissionSection');if(welcome)welcome.style.display='';if(permission)permission.style.display='';const content=document.getElementById('content');if(!content)return;content.querySelectorAll('.dynamic-content-section').forEach(function(el){el.remove();});const section=document.createElement('section');section.className='card dynamic-content-section';section.innerHTML='<div class="card-body"><div class="eyebrow">MENU</div><h3>'+escapeHtml(menuCode)+'</h3><p>Modul siap dihubungkan pada tahap migrasi menu SIM SATRIA.</p></div>';content.appendChild(section);}
 function loadDashboard(){window.location.hash='dashboard';const master=document.getElementById('masterAdminPanel'),admin=document.getElementById('adminSekolahPanel');if(master)master.style.display='none';if(admin)admin.style.display='none';const welcome=document.getElementById('welcome'),permission=document.getElementById('permissionSection');if(welcome)welcome.style.display='';if(permission)permission.style.display='';document.querySelectorAll('#content > .dynamic-content-section').forEach(function(el){el.remove();});}
-
-function showSessionError(error){clearSessionTimeout_();showLoading(false);const message=error&&error.message?error.message:String(error||'Gagal memuat sesi.');const title=document.getElementById('welcomeTitle'),info=document.getElementById('sessionInfo'),schoolInfo=document.getElementById('schoolInfo');if(title)title.textContent='Akses belum tersedia';if(info)info.textContent=message;if(schoolInfo)schoolInfo.innerHTML='';}
+function showSessionError(error){clearSessionTimeout_();showLoading(false);const message=error&&error.message?error.message:String(error||'Gagal memuat sesi.'),title=document.getElementById('welcomeTitle'),info=document.getElementById('sessionInfo'),schoolInfo=document.getElementById('schoolInfo');if(title)title.textContent='Akses belum tersedia';if(info)info.textContent=message;if(schoolInfo)schoolInfo.innerHTML='';}
 function showLoading(show){const el=document.getElementById('spinner')||document.getElementById('loading');if(el){el.hidden=!show;el.style.display=show?'block':'none';}}
 function escapeHtml(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');}
-function bootSatria_(){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadSession,{once:true});else loadSession();}
-bootSatria_();
+function bootSatria_(){if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadSession,{once:true});else loadSession();}bootSatria_();
 </script>
