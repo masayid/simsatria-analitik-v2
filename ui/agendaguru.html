@@ -1,6 +1,7 @@
 <script>
 (function () {
   const originalSelectMenu = window.selectMenu;
+
   window.selectMenu = function (menuCode) {
     const code = String(menuCode || '').toUpperCase();
     if (code === 'AGENDA_GURU' || code === 'AGENDA_MENGAJAR') {
@@ -12,67 +13,348 @@
     }
     if (typeof originalSelectMenu === 'function') originalSelectMenu(menuCode);
   };
+
   window.loadAgendaMengajar = function () {
     const content = document.getElementById('content');
     if (!content) return;
-    content.innerHTML = `<section class="card"><div class="card-body"><div class="eyebrow">GURU</div><h3>Agenda Mengajar</h3><p class="muted">Catat agenda pembelajaran harian dan bukti fisik.</p><form id="agendaMengajarForm" onsubmit="simpanAgendaMengajarUI(event)"><div class="form-grid"><div><label>Tanggal</label><input id="agendaTanggal" type="date" required></div><div><label>Sesi</label><select id="agendaSesi" required><option value="">Pilih sesi...</option></select></div><div><label>Kelas</label><input id="agendaKelas" type="text" placeholder="Contoh: X-1" required></div><div><label>Tujuan Pembelajaran</label><textarea id="agendaTujuan" rows="3" required></textarea></div><div><label>Materi Pembelajaran</label><textarea id="agendaMateri" rows="3" required></textarea></div><div><label>DPL</label><input id="agendaDpl" type="text" placeholder="Contoh: Bernalar kritis, kreatif"></div><div><label>Pengalaman Belajar</label><input id="agendaPengalaman" type="text" placeholder="Contoh: Memahami, mengaplikasi, merefleksi"></div><div><label>Prinsip Pembelajaran</label><input id="agendaPrinsip" type="text" placeholder="Contoh: Berkesadaran, bermakna, menggembirakan"></div><div style="grid-column:1/-1"><label>Rekap Nama Siswa Tidak Masuk</label><textarea id="agendaTidakMasuk" rows="3" placeholder="Kosongkan jika semua hadir."></textarea></div><div style="grid-column:1/-1"><label>Bukti Fisik</label><input id="agendaBuktiFisik" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"><div id="agendaFileInfo" class="file-info">Belum ada file dipilih.</div></div></div><div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button id="agendaSimpanBtn" type="submit" class="primary-btn">💾 Simpan Agenda</button><button type="button" class="secondary-btn" onclick="resetAgendaMengajar()">Reset</button></div></form><div id="agendaStatus" style="margin-top:16px"></div></div></section>`;
+
+    content.innerHTML = `
+      <section class="card">
+        <div class="card-body">
+          <div class="eyebrow">GURU</div>
+          <h3>Agenda Mengajar</h3>
+          <p class="muted">Catat agenda pembelajaran harian dan bukti fisik.</p>
+
+          <form id="agendaMengajarForm" onsubmit="simpanAgendaMengajarUI(event)">
+            <div class="form-grid agenda-grid">
+              <div>
+                <label>Tanggal</label>
+                <input id="agendaTanggal" type="date" required>
+              </div>
+
+              <div>
+                <label>Nama</label>
+                <input id="agendaNama" type="text" readonly placeholder="Memuat nama user...">
+              </div>
+
+              <div>
+                <label>Jam ke- <span class="hint">(bisa pilih lebih dari 1)</span></label>
+                <select id="agendaSesi" class="multi-select" multiple size="5" required></select>
+              </div>
+
+              <div>
+                <label>Kelas</label>
+                <select id="agendaKelas" required>
+                  <option value="">Memuat kelas...</option>
+                </select>
+                <div id="agendaKelasInfo" class="field-info"></div>
+              </div>
+
+              <div>
+                <label>Tujuan Pembelajaran</label>
+                <textarea id="agendaTujuan" rows="3" required></textarea>
+              </div>
+
+              <div>
+                <label>Materi Pembelajaran</label>
+                <textarea id="agendaMateri" rows="3" required></textarea>
+              </div>
+
+              <div>
+                <label>DPL <span class="hint">(bisa pilih lebih dari 1)</span></label>
+                <select id="agendaDpl" class="multi-select" multiple size="5"></select>
+              </div>
+
+              <div>
+                <label>Pengalaman Belajar <span class="hint">(bisa pilih lebih dari 1)</span></label>
+                <select id="agendaPengalaman" class="multi-select" multiple size="4"></select>
+              </div>
+
+              <div>
+                <label>Prinsip Pembelajaran <span class="hint">(bisa pilih lebih dari 1)</span></label>
+                <select id="agendaPrinsip" class="multi-select" multiple size="3"></select>
+              </div>
+
+              <div style="grid-column:1/-1">
+                <label>Rekap Nama Siswa Tidak Masuk</label>
+                <textarea id="agendaTidakMasuk" rows="3" placeholder="Kosongkan jika semua hadir."></textarea>
+              </div>
+
+              <div style="grid-column:1/-1">
+                <label>Bukti Fisik <span class="hint">(gambar, maksimal 2 MB)</span></label>
+                <input id="agendaBuktiFisik" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+                <div id="agendaFileInfo" class="file-info">Belum ada gambar dipilih.</div>
+              </div>
+            </div>
+
+            <div class="agenda-actions">
+              <button id="agendaSimpanBtn" type="submit" class="primary-btn">💾 Simpan Agenda</button>
+              <button type="button" class="secondary-btn" onclick="resetAgendaMengajar()">Reset</button>
+            </div>
+          </form>
+
+          <div id="agendaStatus" style="margin-top:16px"></div>
+        </div>
+      </section>`;
+
     const tanggal = document.getElementById('agendaTanggal');
     if (tanggal) tanggal.value = new Date().toISOString().slice(0, 10);
+
     const fileInput = document.getElementById('agendaBuktiFisik');
-    if (fileInput) fileInput.addEventListener('change', function () {
-      const info = document.getElementById('agendaFileInfo');
-      const file = this.files && this.files[0];
-      if (info) info.textContent = file ? ('File: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)') : 'Belum ada file dipilih.';
-    });
-    google.script.run.withSuccessHandler(function (response) {
-      const select = document.getElementById('agendaSesi');
-      if (!select) return;
-      (response && response.data && response.data.sesi || []).forEach(function (item) { const option = document.createElement('option'); option.value = item; option.textContent = item; select.appendChild(option); });
-    }).withFailureHandler(function (error) { showAgendaStatus('❌ ' + (error && error.message ? error.message : 'Gagal memuat pilihan sesi.'), true); }).getAgendaMengajarFormOptions();
+    if (fileInput) {
+      fileInput.addEventListener('change', function () {
+        const info = document.getElementById('agendaFileInfo');
+        const file = this.files && this.files[0];
+        if (!file) {
+          if (info) info.textContent = 'Belum ada gambar dipilih.';
+          return;
+        }
+        if (!isAgendaImage_(file)) {
+          this.value = '';
+          if (info) info.textContent = 'File ditolak. Pilih JPG, PNG, WEBP, atau GIF.';
+          showAgendaStatus('❌ Bukti fisik hanya boleh berupa gambar JPG, PNG, WEBP, atau GIF.', true);
+          return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          this.value = '';
+          if (info) info.textContent = 'Ukuran melebihi 2 MB.';
+          showAgendaStatus('❌ Ukuran bukti fisik maksimal 2 MB.', true);
+          return;
+        }
+        if (info) info.textContent = 'Gambar: ' + file.name + ' (' + Math.ceil(file.size / 1024) + ' KB)';
+        showAgendaStatus('', false);
+      });
+    }
+
+    google.script.run
+      .withSuccessHandler(function (response) {
+        if (!response || response.ok !== true || !response.data) {
+          showAgendaStatus('❌ Pilihan Agenda Guru tidak dapat dimuat.', true);
+          return;
+        }
+        const data = response.data;
+        setAgendaOptions_('agendaSesi', data.sesi || []);
+        setAgendaOptions_('agendaDpl', data.dpl || []);
+        setAgendaOptions_('agendaPengalaman', data.pengalaman || []);
+        setAgendaOptions_('agendaPrinsip', data.prinsip || []);
+        setAgendaOptions_('agendaKelas', data.kelas || [], 'Pilih kelas...');
+
+        const nama = document.getElementById('agendaNama');
+        if (nama) nama.value = data.nama || '';
+
+        const info = document.getElementById('agendaKelasInfo');
+        if (info) info.textContent = data.sumberKelas === 'KELAS'
+          ? 'Sumber kelas: sheet KELAS'
+          : 'Sumber kelas: MOCK (X, XI, XII)';
+      })
+      .withFailureHandler(function (error) {
+        showAgendaStatus('❌ ' + (error && error.message ? error.message : 'Gagal memuat form Agenda Guru.'), true);
+      })
+      .getAgendaMengajarFormOptions();
   };
+
   window.simpanAgendaMengajarUI = function (event) {
     event.preventDefault();
+
     const btn = document.getElementById('agendaSimpanBtn');
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Menyimpan...'; }
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ Menyimpan...';
+    }
+
     const fileInput = document.getElementById('agendaBuktiFisik');
     const file = fileInput && fileInput.files && fileInput.files[0];
-    const data = { tanggal: document.getElementById('agendaTanggal').value, sesi: document.getElementById('agendaSesi').value, kelas: document.getElementById('agendaKelas').value.trim(), tujuan: document.getElementById('agendaTujuan').value.trim(), materi: document.getElementById('agendaMateri').value.trim(), dpl: document.getElementById('agendaDpl').value.trim(), pengalaman: document.getElementById('agendaPengalaman').value.trim(), prinsip: document.getElementById('agendaPrinsip').value.trim(), rekapTidakMasuk: document.getElementById('agendaTidakMasuk').value.trim(), buktiFisik: '' };
-    function simpanAgenda() {
-      google.script.run.withSuccessHandler(function (response) {
-        if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan Agenda'; }
-        if (!response || response.ok !== true) { showAgendaStatus('❌ ' + ((response && response.message) || 'Agenda gagal disimpan.'), true); return; }
-        showAgendaStatus('✅ Agenda mengajar berhasil disimpan ke ' + response.data.sheet + '.', false);
-        ['agendaTujuan','agendaMateri','agendaDpl','agendaPengalaman','agendaPrinsip','agendaTidakMasuk'].forEach(function(id){ document.getElementById(id).value=''; });
-        if (fileInput) fileInput.value = '';
-        const info = document.getElementById('agendaFileInfo'); if (info) info.textContent = 'Belum ada file dipilih.';
-      }).withFailureHandler(function (error) {
-        if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan Agenda'; }
-        showAgendaStatus('❌ ' + (error && error.message ? error.message : 'Agenda gagal disimpan.'), true);
-      }).simpanAgendaMengajar(data);
+
+    if (file && !isAgendaImage_(file)) {
+      finishAgendaButton_();
+      showAgendaStatus('❌ Bukti fisik hanya boleh berupa gambar.', true);
+      return;
     }
-    if (!file) { simpanAgenda(); return; }
-    if (file.size > 10 * 1024 * 1024) { if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan Agenda'; } showAgendaStatus('❌ Ukuran bukti fisik maksimal 10 MB.', true); return; }
+    if (file && file.size > 2 * 1024 * 1024) {
+      finishAgendaButton_();
+      showAgendaStatus('❌ Ukuran bukti fisik maksimal 2 MB.', true);
+      return;
+    }
+
+    const data = {
+      tanggal: document.getElementById('agendaTanggal').value,
+      sesi: getAgendaSelected_('agendaSesi'),
+      kelas: document.getElementById('agendaKelas').value.trim(),
+      tujuan: document.getElementById('agendaTujuan').value.trim(),
+      materi: document.getElementById('agendaMateri').value.trim(),
+      dpl: getAgendaSelected_('agendaDpl'),
+      pengalaman: getAgendaSelected_('agendaPengalaman'),
+      prinsip: getAgendaSelected_('agendaPrinsip'),
+      rekapTidakMasuk: document.getElementById('agendaTidakMasuk').value.trim(),
+      buktiFisik: ''
+    };
+
+    if (!data.sesi) {
+      finishAgendaButton_();
+      showAgendaStatus('❌ Pilih minimal satu Jam ke-.', true);
+      return;
+    }
+
+    function simpanAgenda() {
+      google.script.run
+        .withSuccessHandler(function (response) {
+          finishAgendaButton_();
+          if (!response || response.ok !== true) {
+            showAgendaStatus('❌ ' + ((response && response.message) || 'Agenda gagal disimpan.'), true);
+            return;
+          }
+          showAgendaStatus('✅ Agenda mengajar berhasil disimpan.', false);
+          ['agendaTujuan','agendaMateri','agendaTidakMasuk'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+          });
+          ['agendaSesi','agendaDpl','agendaPengalaman','agendaPrinsip'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) Array.from(el.options).forEach(function (o) { o.selected = false; });
+          });
+          if (fileInput) fileInput.value = '';
+          const info = document.getElementById('agendaFileInfo');
+          if (info) info.textContent = 'Belum ada gambar dipilih.';
+        })
+        .withFailureHandler(function (error) {
+          finishAgendaButton_();
+          showAgendaStatus('❌ ' + (error && error.message ? error.message : 'Agenda gagal disimpan.'), true);
+        })
+        .simpanAgendaMengajar(data);
+    }
+
+    if (!file) {
+      simpanAgenda();
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = function () {
       const base64 = String(reader.result || '').split(',')[1] || '';
-      if (!base64) { if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan Agenda'; } showAgendaStatus('❌ File tidak dapat dibaca.', true); return; }
-      google.script.run.withSuccessHandler(function (response) {
-        if (!response || response.ok !== true) { if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan Agenda'; } showAgendaStatus('❌ ' + ((response && response.message) || 'Upload bukti fisik gagal.'), true); return; }
-        data.buktiFisik = response.data && response.data.url ? response.data.url : '';
-        if (!data.buktiFisik) { if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan Agenda'; } showAgendaStatus('❌ URL bukti fisik tidak dikembalikan Gateway.', true); return; }
-        simpanAgenda();
-      }).withFailureHandler(function (error) {
-        if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan Agenda'; }
-        showAgendaStatus('❌ ' + (error && error.message ? error.message : 'Upload bukti fisik gagal.'), true);
-      }).simpanBuktiFisikAgendaMengajar({ name: file.name, mimeType: file.type, base64: base64 });
+      if (!base64) {
+        finishAgendaButton_();
+        showAgendaStatus('❌ Gambar tidak dapat dibaca.', true);
+        return;
+      }
+
+      google.script.run
+        .withSuccessHandler(function (response) {
+          if (!response || response.ok !== true) {
+            finishAgendaButton_();
+            showAgendaStatus('❌ ' + ((response && response.message) || 'Upload bukti fisik gagal.'), true);
+            return;
+          }
+          data.buktiFisik = response.data && response.data.url ? response.data.url : '';
+          if (!data.buktiFisik) {
+            finishAgendaButton_();
+            showAgendaStatus('❌ URL bukti fisik tidak dikembalikan Gateway.', true);
+            return;
+          }
+          simpanAgenda();
+        })
+        .withFailureHandler(function (error) {
+          finishAgendaButton_();
+          showAgendaStatus('❌ ' + (error && error.message ? error.message : 'Upload bukti fisik gagal.'), true);
+        })
+        .simpanBuktiFisikAgendaMengajar({
+          name: file.name,
+          mimeType: file.type,
+          sizeBytes: file.size,
+          base64: base64
+        });
     };
-    reader.onerror = function () { if (btn) { btn.disabled = false; btn.textContent = '💾 Simpan Agenda'; } showAgendaStatus('❌ File tidak dapat dibaca.', true); };
+    reader.onerror = function () {
+      finishAgendaButton_();
+      showAgendaStatus('❌ Gambar tidak dapat dibaca.', true);
+    };
     reader.readAsDataURL(file);
   };
-  window.resetAgendaMengajar = function () { const form = document.getElementById('agendaMengajarForm'); if (form) form.reset(); const tanggal = document.getElementById('agendaTanggal'); if (tanggal) tanggal.value = new Date().toISOString().slice(0, 10); const info = document.getElementById('agendaFileInfo'); if (info) info.textContent = 'Belum ada file dipilih.'; showAgendaStatus('', false); };
-  function showAgendaStatus(message, error) { const el = document.getElementById('agendaStatus'); if (!el) return; el.innerHTML = message ? '<div style="padding:12px;border-radius:10px;background:' + (error ? '#fff1f1' : '#edf8f0') + '">' + escapeHtml(message) + '</div>' : ''; }
+
+  window.resetAgendaMengajar = function () {
+    const form = document.getElementById('agendaMengajarForm');
+    if (form) form.reset();
+    const tanggal = document.getElementById('agendaTanggal');
+    if (tanggal) tanggal.value = new Date().toISOString().slice(0, 10);
+    const info = document.getElementById('agendaFileInfo');
+    if (info) info.textContent = 'Belum ada gambar dipilih.';
+    showAgendaStatus('', false);
+  };
+
+  function setAgendaOptions_(id, items, placeholder) {
+    const select = document.getElementById(id);
+    if (!select) return;
+    select.innerHTML = '';
+    if (placeholder) {
+      const first = document.createElement('option');
+      first.value = '';
+      first.textContent = placeholder;
+      select.appendChild(first);
+    }
+    (items || []).forEach(function (item) {
+      const option = document.createElement('option');
+      option.value = item;
+      option.textContent = item;
+      select.appendChild(option);
+    });
+  }
+
+  function getAgendaSelected_(id) {
+    const select = document.getElementById(id);
+    if (!select) return '';
+    return Array.from(select.selectedOptions || [])
+      .map(function (option) { return option.value; })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  function isAgendaImage_(file) {
+    return !!file && /^image\/(jpeg|png|webp|gif)$/i.test(String(file.type || ''));
+  }
+
+  function finishAgendaButton_() {
+    const btn = document.getElementById('agendaSimpanBtn');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '💾 Simpan Agenda';
+    }
+  }
+
+  function showAgendaStatus(message, error) {
+    const el = document.getElementById('agendaStatus');
+    if (!el) return;
+    el.innerHTML = message
+      ? '<div class="agenda-status ' + (error ? 'agenda-error' : 'agenda-success') + '">' + agendaEscape_(message) + '</div>'
+      : '';
+  }
+
+  function agendaEscape_(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 })();
 </script>
 <style>
-.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}.form-grid label{display:block;font-weight:600;margin-bottom:6px}.form-grid input,.form-grid select,.form-grid textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d6e2dc;border-radius:10px;background:#fff;font:inherit}.file-info{margin-top:6px;font-size:.9rem;opacity:.7}.primary-btn,.secondary-btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}.primary-btn{background:#0b3d2e;color:#fff}.secondary-btn{background:#edf4f0;color:#173f32}.muted{opacity:.7}@media(max-width:700px){.form-grid{grid-template-columns:1fr}.form-grid>div[style*="grid-column"]{grid-column:auto!important}}
+.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:16px}
+.form-grid label{display:block;font-weight:600;margin-bottom:6px}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d6e2dc;border-radius:10px;background:#fff;font:inherit}
+.form-grid input[readonly]{background:#f2f7f4;color:#36574a;font-weight:600}
+.multi-select{min-height:120px;cursor:pointer}
+.multi-select option{padding:7px 9px}
+.multi-select option:checked{font-weight:700}
+.hint{font-size:.82rem;font-weight:400;opacity:.65}
+.field-info,.file-info{margin-top:6px;font-size:.88rem;opacity:.72}
+.agenda-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.primary-btn,.secondary-btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
+.primary-btn{background:#0b3d2e;color:#fff}
+.secondary-btn{background:#edf4f0;color:#173f32}
+.primary-btn:disabled{opacity:.65;cursor:wait}
+.agenda-status{padding:12px;border-radius:10px}
+.agenda-error{background:#fff1f1;color:#8b2222}
+.agenda-success{background:#edf8f0;color:#185c3e}
+.muted{opacity:.7}
+@media(max-width:700px){.form-grid{grid-template-columns:1fr}.form-grid>div[style*="grid-column"]{grid-column:auto!important}}
 </style>
