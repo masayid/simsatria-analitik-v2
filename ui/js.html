@@ -60,6 +60,7 @@ function renderSession(response) {
 
     renderMenus(SATRIA_SESSION.menus || []);
     renderPermissions(SATRIA_SESSION.permissions || []);
+    initMasterAdmin();
   } catch (error) {
     showSessionError(error);
   }
@@ -125,19 +126,38 @@ function selectMenu(menuCode) {
   });
 
   if (menuCode === 'DASHBOARD') return loadDashboard();
+  if (menuCode === 'MASTER_ADMIN') return loadMasterAdmin();
+
+  const panel = document.getElementById('masterAdminPanel');
+  if (panel) panel.style.display = 'none';
+  const welcome = document.getElementById('welcome');
+  const permission = document.getElementById('permissionSection');
+  if (welcome) welcome.style.display = '';
+  if (permission) permission.style.display = '';
 
   const content = document.getElementById('content');
   if (!content) return;
 
-  content.innerHTML = '<section class="card"><div class="card-body">' +
+  content.querySelectorAll('.dynamic-content-section').forEach(function(el){ el.remove(); });
+  const section = document.createElement('section');
+  section.className = 'card dynamic-content-section';
+  section.innerHTML = '<div class="card-body">' +
     '<div class="eyebrow">MENU</div>' +
     '<h3>' + escapeHtml(menuCode) + '</h3>' +
     '<p>Modul siap dihubungkan pada tahap migrasi menu SIM SATRIA.</p>' +
-    '</div></section>';
+    '</div>';
+  content.appendChild(section);
 }
 
 function loadDashboard() {
   window.location.hash = 'dashboard';
+  const panel = document.getElementById('masterAdminPanel');
+  if (panel) panel.style.display = 'none';
+  const welcome = document.getElementById('welcome');
+  const permission = document.getElementById('permissionSection');
+  if (welcome) welcome.style.display = '';
+  if (permission) permission.style.display = '';
+  document.querySelectorAll('#content > .dynamic-content-section').forEach(function(el){el.remove();});
 }
 
 function showSessionError(error) {
