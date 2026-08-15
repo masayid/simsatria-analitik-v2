@@ -22,20 +22,19 @@ function gatewayRequireAction_(action, payload) {
 
   if (action === 'SPREADSHEET_ENSURE_SHEET') {
     const sheet = gatewayClean_(payload.sheet).toUpperCase();
-    const allowedCreate = ['KELAS','GURU','KARYAWAN','SISWA'];
+    const allowedCreate = ['KELAS','GURU','KARYAWAN','SISWA','KEPALA_SEKOLAH'];
     if (allowedCreate.indexOf(sheet) < 0) {
-      throw new Error('Gateway hanya mengizinkan pembuatan sheet KELAS, GURU, KARYAWAN, atau SISWA.');
+      throw new Error('Gateway hanya mengizinkan pembuatan sheet KELAS, GURU, KARYAWAN, SISWA, atau KEPALA_SEKOLAH.');
     }
-    if (!Array.isArray(payload.headers) || !payload.headers.length) {
-      throw new Error('Header ' + sheet + ' wajib dikirim.');
-    }
+    if (!Array.isArray(payload.headers) || !payload.headers.length) throw new Error('Header ' + sheet + ' wajib dikirim.');
     return;
   }
 
   if (action === 'SPREADSHEET_APPEND' || action === 'SPREADSHEET_UPDATE_ROW' || action === 'SPREADSHEET_DELETE_ROW') {
     const sheet = gatewayClean_(payload.sheet).toUpperCase();
     if (!sheet) throw new Error('Sheet tujuan wajib dikirim.');
-    if (sheet !== 'KELAS' && sheet !== 'GURU' && sheet !== 'KARYAWAN') {
+    const alwaysAllowed = ['KELAS','GURU','KARYAWAN','SISWA','KEPALA_SEKOLAH'];
+    if (alwaysAllowed.indexOf(sheet) < 0) {
       const configured = PropertiesService.getScriptProperties().getProperty('GATEWAY_SHEETS_' + schoolId) || '';
       const allowedSheets = configured.split(',').map(gatewayClean_).filter(Boolean);
       if (!allowedSheets.length) throw new Error('Belum ada sheet yang diizinkan untuk gateway sekolah ' + schoolId + '.');
@@ -49,10 +48,8 @@ function gatewayRequireAction_(action, payload) {
 
   if (action === 'SPREADSHEET_READ') {
     const sheet = gatewayClean_(payload.sheet).toUpperCase();
-    const allowedRead = ['KELAS','GURU','KARYAWAN','TRX_AGENDA_GURU','SISWA'];
-    if (allowedRead.indexOf(sheet) < 0) {
-      throw new Error('Gateway hanya mengizinkan pembacaan sheet KELAS, GURU, KARYAWAN, TRX_AGENDA_GURU, dan SISWA.');
-    }
+    const allowedRead = ['KELAS','GURU','KARYAWAN','TRX_AGENDA_GURU','SISWA','KEPALA_SEKOLAH'];
+    if (allowedRead.indexOf(sheet) < 0) throw new Error('Gateway hanya mengizinkan pembacaan sheet KELAS, GURU, KARYAWAN, TRX_AGENDA_GURU, SISWA, dan KEPALA_SEKOLAH.');
   }
 
   if (action === 'DRIVE_UPLOAD') {
