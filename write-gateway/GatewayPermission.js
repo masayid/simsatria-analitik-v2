@@ -2,6 +2,7 @@
 function gatewayRequireAction_(action, payload) {
   const allowed = [
     'AUTH_LOOKUP_USER',
+    'SPREADSHEET_ENSURE_SHEET',
     'SPREADSHEET_APPEND',
     'SPREADSHEET_UPDATE_ROW',
     'SPREADSHEET_DELETE_ROW',
@@ -21,23 +22,39 @@ function gatewayRequireAction_(action, payload) {
   const schoolId = gatewayClean_(payload && payload.schoolId).toUpperCase();
   if (!schoolId) throw new Error('schoolId wajib dikirim.');
 
+  if (action === 'SPREADSHEET_ENSURE_SHEET') {
+    const sheet = gatewayClean_(payload.sheet).toUpperCase();
+    if (sheet !== 'KELAS') {
+      throw new Error('Gateway hanya mengizinkan pembuatan sheet KELAS.');
+    }
+    if (!Array.isArray(payload.headers) || !payload.headers.length) {
+      throw new Error('Header KELAS wajib dikirim.');
+    }
+    return;
+  }
+
   if (
     action === 'SPREADSHEET_APPEND' ||
     action === 'SPREADSHEET_UPDATE_ROW' ||
     action === 'SPREADSHEET_DELETE_ROW'
   ) {
-    const sheet = gatewayClean_(payload.sheet);
+    const sheet = gatewayClean_(payload.sheet).toUpperCase();
     if (!sheet) throw new Error('Sheet tujuan wajib dikirim.');
 
-    const configured = PropertiesService.getScriptProperties()
-      .getProperty('GATEWAY_SHEETS_' + schoolId) || '';
-    const allowedSheets = configured.split(',').map(gatewayClean_).filter(Boolean);
+    // KELAS dikelola oleh ADMIN_SEKOLAH melalui backend aplikasi.
+    // Sheet otomatis masuk allowlist saat SPREADSHEET_ENSURE_SHEET dijalankan.
+    // Di sini KELAS diizinkan khusus agar tidak perlu setup manual per sekolah.
+    if (sheet !== 'KELAS') {
+      const configured = PropertiesService.getScriptProperties()
+        .getProperty('GATEWAY_SHEETS_' + schoolId) || '';
+      const allowedSheets = configured.split(',').map(gatewayClean_).filter(Boolean);
 
-    if (!allowedSheets.length) {
-      throw new Error('Belum ada sheet yang diizinkan untuk gateway sekolah ' + schoolId + '.');
-    }
-    if (allowedSheets.indexOf(sheet) < 0) {
-      throw new Error('Sheet tidak diizinkan untuk gateway: ' + sheet);
+      if (!allowedSheets.length) {
+        throw new Error('Belum ada sheet yang diizinkan untuk gateway sekolah ' + schoolId + '.');
+      }
+      if (allowedSheets.indexOf(sheet) < 0) {
+        throw new Error('Sheet tidak diizinkan untuk gateway: ' + sheet);
+      }
     }
 
     if (action !== 'SPREADSHEET_APPEND') {
