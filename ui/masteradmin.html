@@ -67,6 +67,8 @@ function initMasterAdmin() {
     if (!res || !res.ok || !res.data || !res.data.isOwner) return;
     MASTER_ADMIN.sheets = res.data.sheets || [];
     const nav = document.getElementById('masterAdminNav');
+    const ownerSection = document.getElementById('masterOwnerSection');
+    if (ownerSection) ownerSection.style.display = '';
     if (nav) nav.style.display = '';
   }).withFailureHandler(function() {}).getMasterAdminContext();
 }
