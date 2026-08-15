@@ -1,0 +1,100 @@
+<script>
+let KS_STATE_={row:null,signature1:'',signature2:''};
+
+function loadAdminKepalaSekolah(){
+  if(typeof isCurrentAdminSekolah_==='function' && !isCurrentAdminSekolah_()) return showSessionError({message:'Akses KELOLA KEPALA SEKOLAH hanya untuk ADMIN_SEKOLAH.'});
+  document.querySelectorAll('#content > section').forEach(function(el){
+    if(el.id!=='adminKepalaSekolahPanel' && el.id!=='adminSiswaPanel' && el.id!=='adminKelasPanel' && el.id!=='adminSekolahPanel') el.style.display='none';
+  });
+  const panel=document.getElementById('adminKepalaSekolahPanel');
+  if(panel) panel.style.display='block';
+  const school=(typeof SATRIA_SESSION!=='undefined'&&SATRIA_SESSION&&SATRIA_SESSION.school)||{};
+  const meta=document.getElementById('ksSchoolMeta');
+  if(meta) meta.textContent=(school.namaSekolah||school.nama_sekolah||'Sekolah Aktif')+' • Sheet: KEPALA_SEKOLAH';
+  refreshKepalaSekolah();
+}
+
+function refreshKepalaSekolah(){
+  const box=document.getElementById('ksDataCard');
+  if(box) box.innerHTML='<div class="ks-empty">Memuat data Kepala Sekolah...</div>';
+  google.script.run.withSuccessHandler(function(res){
+    if(!res||!res.ok) return showKSNotice_(res&&res.message||'Gagal memuat Kepala Sekolah.','error');
+    const data=res.data||{};
+    KS_STATE_.row=(data.rows&&data.rows[0])||null;
+    renderKepalaSekolah_(KS_STATE_.row);
+  }).withFailureHandler(function(err){showKSNotice_(err.message,'error');}).getKepalaSekolahData();
+}
+
+function renderKepalaSekolah_(row){
+  const box=document.getElementById('ksDataCard');
+  if(!box)return;
+  if(!row){
+    box.innerHTML='<div class="ks-empty">Belum ada data Kepala Sekolah. Klik <strong>Input / Edit</strong> untuk mengisi.</div>';
+    return;
+  }
+  const sign1=row['PREVIEW GAMBAR TANDA TANGAN (IMAGE) bentuk-1']||'';
+  const sign2=row['PREVIEW GAMBAR TANDA TANGAN (IMAGE) bentuk-2']||'';
+  box.innerHTML='<div class="ks-grid">'+
+    ksItem_('ID_KS',row.ID_KS)+ksItem_('NAMA',row.NAMA)+ksItem_('NIP',row.NIP)+ksItem_('NUPTK',row.NUPTK)+ksItem_('PANGKAT',row.PANGKAT)+ksItem_('GOLONGAN',row.GOLONGAN)+
+    '</div><div class="ks-signs"><div class="ks-sign-view"><strong>Tanda Tangan Bentuk-1</strong><div style="margin-top:7px">'+(sign1?'<img src="'+escapeHtml_(sign1)+'" alt="Tanda tangan bentuk 1">':'<span class="ks-empty d-block">Belum ada gambar.</span>')+'</div></div><div class="ks-sign-view"><strong>Tanda Tangan Bentuk-2</strong><div style="margin-top:7px">'+(sign2?'<img src="'+escapeHtml_(sign2)+'" alt="Tanda tangan bentuk 2">':'<span class="ks-empty d-block">Belum ada gambar.</span>')+'</div></div></div>';
+}
+
+function ksItem_(label,value){return '<div class="ks-item"><small>'+escapeHtml_(label)+'</small><strong>'+escapeHtml_(value||'—')+'</strong></div>';}
+
+function openKepalaSekolahForm_(){
+  const row=KS_STATE_.row||{};
+  document.getElementById('ksFormTitle').textContent=row._row?'Edit Kepala Sekolah':'Input Kepala Sekolah';
+  document.getElementById('ksId').value=row.ID_KS||'';
+  document.getElementById('ksNama').value=row.NAMA||'';
+  document.getElementById('ksNip').value=row.NIP||'';
+  document.getElementById('ksNuptk').value=row.NUPTK||'';
+  document.getElementById('ksPangkat').value=row.PANGKAT||'';
+  document.getElementById('ksGolongan').value=row.GOLONGAN||'';
+  KS_STATE_.signature1=row['PREVIEW GAMBAR TANDA TANGAN (IMAGE) bentuk-1']||'';
+  KS_STATE_.signature2=row['PREVIEW GAMBAR TANDA TANGAN (IMAGE) bentuk-2']||'';
+  setKSSignaturePreview_(1,KS_STATE_.signature1);setKSSignaturePreview_(2,KS_STATE_.signature2);
+  document.getElementById('ksModal').style.display='flex';
+}
+function closeKepalaSekolahForm_(){document.getElementById('ksModal').style.display='none';}
+
+function previewKSSignature_(event,bentuk){
+  const file=event.target.files&&event.target.files[0];
+  if(!file)return;
+  if(!/^image\/(png|jpeg|webp)$/i.test(file.type)){showKSNotice_('Tanda tangan harus berupa PNG, JPG/JPEG, atau WEBP.','error');event.target.value='';return;}
+  if(file.size>1024*1024){showKSNotice_('Ukuran gambar tanda tangan maksimal 1 MB.','error');event.target.value='';return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    if(bentuk===1)KS_STATE_.signature1=e.target.result;else KS_STATE_.signature2=e.target.result;
+    setKSSignaturePreview_(bentuk,e.target.result);
+    uploadKSSignature_(e.target.result,file.name,bentuk);
+  };
+  reader.readAsDataURL(file);
+}
+
+function uploadKSSignature_(dataUrl,fileName,bentuk){
+  google.script.run.withSuccessHandler(function(res){
+    if(!res||!res.ok)return showKSNotice_(res&&res.message||'Upload tanda tangan gagal.','error');
+    const d=res.data||{};
+    if(bentuk===1)KS_STATE_.signature1=d.url||d.fileUrl||KS_STATE_.signature1;else KS_STATE_.signature2=d.url||d.fileUrl||KS_STATE_.signature2;
+    showKSNotice_('Tanda tangan bentuk-'+bentuk+' berhasil diunggah.','success');
+  }).withFailureHandler(function(err){showKSNotice_(err.message,'error');}).uploadKepalaSekolahSignature(dataUrl,fileName,bentuk);
+}
+function setKSSignaturePreview_(bentuk,url){const el=document.getElementById('ksPreview'+bentuk);if(!el)return;el.src=url||'';el.style.display=url?'block':'none';}
+
+function submitKepalaSekolahForm_(e){
+  e.preventDefault();
+  const btn=document.getElementById('ksSaveBtn');btn.disabled=true;btn.textContent='Menyimpan...';
+  const row=KS_STATE_.row||{};
+  const payload={_row:row._row||0,ID_KS:document.getElementById('ksId').value.trim(),NAMA:document.getElementById('ksNama').value.trim(),NIP:document.getElementById('ksNip').value.trim(),NUPTK:document.getElementById('ksNuptk').value.trim(),PANGKAT:document.getElementById('ksPangkat').value.trim(),GOLONGAN:document.getElementById('ksGolongan').value.trim()};
+  payload['PREVIEW GAMBAR TANDA TANGAN (IMAGE) bentuk-1']=KS_STATE_.signature1||'';
+  payload['PREVIEW GAMBAR TANDA TANGAN (IMAGE) bentuk-2']=KS_STATE_.signature2||'';
+  google.script.run.withSuccessHandler(function(res){
+    btn.disabled=false;btn.textContent='Simpan';
+    if(!res||!res.ok)return showKSNotice_(res&&res.message||'Gagal menyimpan Kepala Sekolah.','error');
+    closeKepalaSekolahForm_();KS_STATE_.row=(res.data&&res.data.rows&&res.data.rows[0])||null;renderKepalaSekolah_(KS_STATE_.row);showKSNotice_('Data Kepala Sekolah berhasil disimpan.','success');
+  }).withFailureHandler(function(err){btn.disabled=false;btn.textContent='Simpan';showKSNotice_(err.message,'error');}).saveKepalaSekolah(payload);
+}
+
+function showKSNotice_(message,type){const el=document.getElementById('ksNotice');if(!el)return;el.textContent=message||'';el.style.display=message?'block':'none';el.style.background=type==='error'?'#fff0f0':'#edf7f1';el.style.color=type==='error'?'#9b4242':'#28543f';}
+function escapeHtml_(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');}
+</script>
