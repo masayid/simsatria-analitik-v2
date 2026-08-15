@@ -1,7 +1,6 @@
 /**
- * Semua operasi write/upload/PDF diarahkan ke gateway terotorisasi.
- * Mode diagnostik menampilkan HTTP status, Content-Type, dan respons mentah
- * jika Gateway tidak mengembalikan JSON. Token tidak pernah ditampilkan.
+ * Semua operasi write/upload/PDF/read sekolah diarahkan ke Gateway terotorisasi.
+ * Token tidak pernah ditampilkan ke frontend.
  */
 function gatewayCall_(action, payload) {
   const cfg = getGatewayConfig_();
@@ -10,8 +9,6 @@ function gatewayCall_(action, payload) {
     throw new Error('Write Gateway belum dikonfigurasi.');
   }
 
-  // USER_ACCESSING tidak boleh membaca MASTER secara langsung.
-  // Ambil school context dari Runtime Auth Directory/session.
   const school = getGatewayCurrentSchool_();
   const schoolId = school && (school.idSekolah || school.id_sekolah)
     ? (school.idSekolah || school.id_sekolah)
@@ -32,10 +29,7 @@ function gatewayCall_(action, payload) {
 
 /**
  * Lookup identitas user melalui Gateway.
- *
- * PENTING: fungsi ini sengaja tidak memakai gatewayCall_(), karena saat
- * autentikasi awal schoolId belum diketahui. Gateway yang menentukan sekolah
- * dari MASTER_SEKOLAH lalu membaca USERS sekolah sebagai owner/eksekutor.
+ * Gateway menentukan sekolah dari MASTER_SEKOLAH lalu membaca USERS sekolah.
  */
 function gatewayLookupCurrentUser_() {
   const cfg = getGatewayConfig_();
@@ -132,4 +126,9 @@ function uploadViaGateway(menu, file) {
 function pdfViaGateway(menu, payload) {
   requirePermission_(APP_CONFIG.PERMISSION.PDF, menu);
   return gatewayCall_('PDF_CREATE', payload);
+}
+
+/** Read-only helper yang saat ini dipakai Agenda Guru untuk sheet KELAS. */
+function readSheetViaGateway(sheet) {
+  return gatewayCall_('SPREADSHEET_READ', { sheet: sheet });
 }
