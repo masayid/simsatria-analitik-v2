@@ -1,0 +1,51 @@
+<script>
+/* CETAK AGENDA GURU — override tombol cetak lama tanpa mengubah modul agenda input. */
+(function(){
+  window.cetakAgendaMengajar = function(){
+    const a = document.getElementById('agendaFilterAwal');
+    const b = document.getElementById('agendaFilterAkhir');
+    const start = a ? String(a.value || '').trim() : '';
+    const end = b ? String(b.value || '').trim() : '';
+    const status = document.getElementById('agendaStatus');
+    if(!start || !end){ if(status) status.innerHTML='<div class="alert alert-danger py-2 mb-2">Tanggal awal dan tanggal akhir wajib diisi.</div>'; return; }
+    if(start > end){ if(status) status.innerHTML='<div class="alert alert-danger py-2 mb-2">Tanggal awal tidak boleh lebih besar dari tanggal akhir.</div>'; return; }
+
+    /* Buka tab terlebih dahulu agar popup blocker tidak menutup hasil setelah server selesai. */
+    let win = null;
+    try { win = window.open('', '_blank'); } catch(e) {}
+    if(win) {
+      win.document.open();
+      win.document.write('<!doctype html><html><head><title>CETAK AGENDA GURU</title></head><body style="font-family:Arial;padding:30px;text-align:center"><h3>Membuat CETAK Agenda Guru...</h3><p>Mohon tunggu.</p></body></html>');
+      win.document.close();
+    }
+    if(status) status.innerHTML='<div class="alert alert-success py-2 mb-2">Membuat CETAK Agenda Guru...</div>';
+
+    google.script.run
+      .withSuccessHandler(function(response){
+        if(!response || response.ok !== true){
+          if(win) win.close();
+          if(status) status.innerHTML='<div class="alert alert-danger py-2 mb-2">'+cetakEsc_(response && response.message || 'CETAK agenda gagal dibuat.')+'</div>';
+          return;
+        }
+        const url = response.data && response.data.url ? response.data.url : '';
+        if(!url){
+          if(win) win.close();
+          if(status) status.innerHTML='<div class="alert alert-danger py-2 mb-2">File CETAK berhasil dibuat, tetapi URL PDF tidak tersedia.</div>';
+          return;
+        }
+        if(win){
+          win.location.href = url;
+        } else {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+        if(status) status.innerHTML='<div class="alert alert-success py-2 mb-2">CETAK Agenda Guru berhasil dibuat dan dibuka pada tab baru.</div>';
+      })
+      .withFailureHandler(function(err){
+        if(win) win.close();
+        if(status) status.innerHTML='<div class="alert alert-danger py-2 mb-2">'+cetakEsc_(err && err.message || err || 'CETAK agenda gagal dibuat.')+'</div>';
+      })
+      .cetakAgendaMengajarCETAK(start, end);
+  };
+  function cetakEsc_(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');}
+})();
+</script>
