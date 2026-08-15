@@ -38,6 +38,16 @@ const SCHOOL_GURU_HEADERS = Object.freeze([
   'IJAZAH'
 ]);
 
+const SCHOOL_KARYAWAN_SHEET = 'KARYAWAN';
+const SCHOOL_KARYAWAN_HEADERS = Object.freeze([
+  'ID_KARYAWAN',
+  'NIP',
+  'NAMA',
+  'BIDANG_TUGAS',
+  'STATUS',
+  'IJAZAH'
+]);
+
 function getAdminSekolahContext() {
   const admin = requireAdminSekolah_();
   const school = admin.school;
@@ -234,11 +244,7 @@ function deleteAdminSchoolUser(rowNumber) {
 
 function ensureAdminSchoolUsersSheet(){const admin=requireAdminSekolah_(),spreadsheet=SpreadsheetApp.openById(admin.school.spreadsheet_id);return ok_(ensureSchoolUsersSheet_(spreadsheet,admin.masterUser),'Sheet USERS berhasil diperiksa/dibuat.');}
 
-/* ================================================================
- * ADMIN SEKOLAH — KELAS
- * ================================================================ */
 function ensureAdminSchoolKelasSheet_(){requireAdminSekolah_();return gatewayCall_('SPREADSHEET_ENSURE_SHEET',{sheet:SCHOOL_KELAS_SHEET,headers:SCHOOL_KELAS_HEADERS.slice()});}
-
 function getAdminSchoolKelas(){
   requireAdminSekolah_();ensureAdminSchoolKelasSheet_();
   const result=readSheetViaGateway(SCHOOL_KELAS_SHEET),data=result&&result.data?result.data:result,values=data&&Array.isArray(data.values)?data.values:[];
@@ -248,7 +254,6 @@ function getAdminSchoolKelas(){
   const rows=values.slice(1).map(function(row,i){if(!row.some(function(v){return clean_(v)!=='';}))return null;return {_row:i+2,KELAS:clean_(row[index.KELAS]),TINGKAT:clean_(row[index.TINGKAT]),JURUSAN:clean_(row[index.JURUSAN]),WALI_KELAS:clean_(row[index.WALI_KELAS]),STATUS:clean_(row[index.STATUS]).toUpperCase()||APP_CONFIG.STATUS.ACTIVE};}).filter(Boolean);
   return ok_({sheet:SCHOOL_KELAS_SHEET,headers:SCHOOL_KELAS_HEADERS.slice(),rows:rows,total:rows.length},'Data KELAS berhasil dimuat.');
 }
-
 function saveAdminSchoolKelas(data){
   requireAdminSekolah_();const payload=data||{};ensureAdminSchoolKelasSheet_();
   const kelas=clean_(payload.KELAS),tingkat=clean_(payload.TINGKAT).toUpperCase(),jurusan=clean_(payload.JURUSAN),wali=clean_(payload.WALI_KELAS),status=clean_(payload.STATUS).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,rowNumber=Number(payload._row||0);
@@ -263,99 +268,51 @@ function saveAdminSchoolKelas(data){
 function deleteAdminSchoolKelas(rowNumber){requireAdminSekolah_();ensureAdminSchoolKelasSheet_();const row=Number(rowNumber);if(!(row>=2))throw new Error('Baris KELAS tidak valid.');gatewayCall_('SPREADSHEET_DELETE_ROW',{sheet:SCHOOL_KELAS_SHEET,rowNumber:row});return getAdminSchoolKelas();}
 function ensureAdminSchoolKelasSheet(){const result=ensureAdminSchoolKelasSheet_();return ok_(result&&result.data?result.data:result,'Sheet KELAS berhasil diperiksa/dibuat.');}
 
-/* ================================================================
- * ADMIN SEKOLAH — GURU
- * Data GURU berada pada spreadsheet sekolah masing-masing.
- * Modul lain (Agenda Mengajar, Wali Kelas, Presensi, Litnum, Guru Piket,
- * Guru Wali, dst.) dapat membaca directory ini melalui Gateway.
- * ================================================================ */
-function ensureAdminSchoolGuruSheet_(){
-  requireAdminSekolah_();
-  return gatewayCall_('SPREADSHEET_ENSURE_SHEET',{sheet:SCHOOL_GURU_SHEET,headers:SCHOOL_GURU_HEADERS.slice()});
-}
-
+function ensureAdminSchoolGuruSheet_(){requireAdminSekolah_();return gatewayCall_('SPREADSHEET_ENSURE_SHEET',{sheet:SCHOOL_GURU_SHEET,headers:SCHOOL_GURU_HEADERS.slice()});}
 function readAdminSchoolGuru_(){
-  const result=readSheetViaGateway(SCHOOL_GURU_SHEET);
-  const data=result&&result.data?result.data:result;
-  const values=data&&Array.isArray(data.values)?data.values:[];
-  if(values.length<2)return [];
-  const headers=values[0].map(function(v){return clean_(v).toUpperCase();}),index={};
-  SCHOOL_GURU_HEADERS.forEach(function(header){index[header]=headers.indexOf(header);});
-  const missing=SCHOOL_GURU_HEADERS.filter(function(header){return index[header]<0;});
-  if(missing.length)throw new Error('Header GURU tidak lengkap: '+missing.join(', '));
-  return values.slice(1).map(function(row,i){
-    if(!row.some(function(v){return clean_(v)!=='';}))return null;
-    return {_row:i+2,ID_GURU:clean_(row[index.ID_GURU]),NIP:clean_(row[index.NIP]),NAMA:clean_(row[index.NAMA]),MAPEL:clean_(row[index.MAPEL]),STATUS:clean_(row[index.STATUS]).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,SERTIFIKASI:clean_(row[index.SERTIFIKASI]),IJAZAH:clean_(row[index.IJAZAH])};
-  }).filter(Boolean);
-}
-
-function getAdminSchoolGuru(){
-  requireAdminSekolah_();
-  ensureAdminSchoolGuruSheet_();
-  const rows=readAdminSchoolGuru_();
-  return ok_({sheet:SCHOOL_GURU_SHEET,headers:SCHOOL_GURU_HEADERS.slice(),rows:rows,total:rows.length,perPage:10},'Data GURU berhasil dimuat.');
-}
-
-function saveAdminSchoolGuru(data){
-  requireAdminSekolah_();
-  const payload=data||{};
-  ensureAdminSchoolGuruSheet_();
-  const id=clean_(payload.ID_GURU),nip=clean_(payload.NIP),nama=clean_(payload.NAMA),mapel=clean_(payload.MAPEL),status=clean_(payload.STATUS).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,sertifikasi=clean_(payload.SERTIFIKASI),ijazah=clean_(payload.IJAZAH),rowNumber=Number(payload._row||0);
-  if(!id)throw new Error('ID_GURU wajib diisi.');
-  if(!nama)throw new Error('NAMA guru wajib diisi.');
-  if(!mapel)throw new Error('MAPEL wajib diisi.');
-  if(['ACTIVE','INACTIVE'].indexOf(status)<0)throw new Error('STATUS harus ACTIVE atau INACTIVE.');
-  const rows=readAdminSchoolGuru_();
-  rows.forEach(function(row){
-    if(Number(row._row)===rowNumber)return;
-    if(clean_(row.ID_GURU).toUpperCase()===id.toUpperCase())throw new Error('ID_GURU sudah terdaftar: '+id);
-    if(nip&&clean_(row.NIP).toUpperCase()===nip.toUpperCase())throw new Error('NIP sudah terdaftar: '+nip);
-  });
-  const row=[id,nip,nama,mapel,status,sertifikasi,ijazah];
-  if(rowNumber>=2)gatewayCall_('SPREADSHEET_UPDATE_ROW',{sheet:SCHOOL_GURU_SHEET,rowNumber:rowNumber,row:row});
-  else gatewayCall_('SPREADSHEET_APPEND',{sheet:SCHOOL_GURU_SHEET,row:row});
-  return getAdminSchoolGuru();
-}
-
-function deleteAdminSchoolGuru(rowNumber){
-  requireAdminSekolah_();
-  ensureAdminSchoolGuruSheet_();
-  const row=Number(rowNumber);
-  if(row<2)throw new Error('Baris GURU tidak valid.');
-  gatewayCall_('SPREADSHEET_DELETE_ROW',{sheet:SCHOOL_GURU_SHEET,rowNumber:row});
-  return getAdminSchoolGuru();
-}
-
-function importAdminSchoolGuru(rows){
-  requireAdminSekolah_();
-  ensureAdminSchoolGuruSheet_();
-  if(!Array.isArray(rows)||!rows.length)throw new Error('Data template GURU kosong.');
-  if(rows.length>500)throw new Error('Maksimal 500 baris per upload template.');
-  const existing=readAdminSchoolGuru_();
-  const ids={},nips={};
-  existing.forEach(function(r){ids[clean_(r.ID_GURU).toUpperCase()]=true;if(clean_(r.NIP))nips[clean_(r.NIP).toUpperCase()]=true;});
-  let inserted=0,skipped=0,errors=[];
-  rows.forEach(function(item,i){
-    const id=clean_(item.ID_GURU),nip=clean_(item.NIP),nama=clean_(item.NAMA),mapel=clean_(item.MAPEL),status=clean_(item.STATUS).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,sertifikasi=clean_(item.SERTIFIKASI),ijazah=clean_(item.IJAZAH);
-    if(!id||!nama||!mapel||['ACTIVE','INACTIVE'].indexOf(status)<0){errors.push('Baris '+(i+2)+': ID_GURU, NAMA, MAPEL wajib dan STATUS harus ACTIVE/INACTIVE.');return;}
-    if(ids[id.toUpperCase()]){skipped++;return;}
-    if(nip&&nips[nip.toUpperCase()]){skipped++;return;}
-    gatewayCall_('SPREADSHEET_APPEND',{sheet:SCHOOL_GURU_SHEET,row:[id,nip,nama,mapel,status,sertifikasi,ijazah]});
-    ids[id.toUpperCase()]=true;if(nip)nips[nip.toUpperCase()]=true;inserted++;
-  });
-  const result=getAdminSchoolGuru();
-  return ok_({inserted:inserted,skipped:skipped,errors:errors,rows:result.data.rows,total:result.data.total},'Template GURU selesai diproses.');
-}
-
-function getSchoolGuruDirectory(){
-  const session=getSessionContext();
-  if(!session||session.ok!==true||!session.data||!session.data.school)throw new Error('Sesi sekolah tidak tersedia.');
   const result=readSheetViaGateway(SCHOOL_GURU_SHEET),data=result&&result.data?result.data:result,values=data&&Array.isArray(data.values)?data.values:[];
-  if(values.length<2)return ok_([],'Directory GURU belum memiliki data.');
-  const headers=values[0].map(function(v){return clean_(v).toUpperCase();}),idxId=headers.indexOf('ID_GURU'),idxNip=headers.indexOf('NIP'),idxNama=headers.indexOf('NAMA'),idxMapel=headers.indexOf('MAPEL'),idxStatus=headers.indexOf('STATUS');
-  if(idxNama<0)throw new Error('Kolom NAMA pada GURU tidak ditemukan.');
-  const rows=[];for(let i=1;i<values.length;i++){const nama=clean_(values[i][idxNama]);if(!nama)continue;const status=idxStatus>=0?clean_(values[i][idxStatus]).toUpperCase():'ACTIVE';if(status==='INACTIVE')continue;rows.push({ID_GURU:idxId>=0?clean_(values[i][idxId]):'',NIP:idxNip>=0?clean_(values[i][idxNip]):'',NAMA:nama,MAPEL:idxMapel>=0?clean_(values[i][idxMapel]):'',STATUS:status});}
-  return ok_(rows,'Directory GURU berhasil dimuat.');
+  if(values.length<2)return [];
+  const headers=values[0].map(function(v){return clean_(v).toUpperCase();}),index={};SCHOOL_GURU_HEADERS.forEach(function(header){index[header]=headers.indexOf(header);});
+  const missing=SCHOOL_GURU_HEADERS.filter(function(header){return index[header]<0;});if(missing.length)throw new Error('Header GURU tidak lengkap: '+missing.join(', '));
+  return values.slice(1).map(function(row,i){if(!row.some(function(v){return clean_(v)!=='';}))return null;return {_row:i+2,ID_GURU:clean_(row[index.ID_GURU]),NIP:clean_(row[index.NIP]),NAMA:clean_(row[index.NAMA]),MAPEL:clean_(row[index.MAPEL]),STATUS:clean_(row[index.STATUS]).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,SERTIFIKASI:clean_(row[index.SERTIFIKASI]),IJAZAH:clean_(row[index.IJAZAH])};}).filter(Boolean);
 }
-
+function getAdminSchoolGuru(){requireAdminSekolah_();ensureAdminSchoolGuruSheet_();const rows=readAdminSchoolGuru_();return ok_({sheet:SCHOOL_GURU_SHEET,headers:SCHOOL_GURU_HEADERS.slice(),rows:rows,total:rows.length,perPage:10},'Data GURU berhasil dimuat.');}
+function saveAdminSchoolGuru(data){
+  requireAdminSekolah_();const payload=data||{};ensureAdminSchoolGuruSheet_();const id=clean_(payload.ID_GURU),nip=clean_(payload.NIP),nama=clean_(payload.NAMA),mapel=clean_(payload.MAPEL),status=clean_(payload.STATUS).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,sertifikasi=clean_(payload.SERTIFIKASI),ijazah=clean_(payload.IJAZAH),rowNumber=Number(payload._row||0);
+  if(!id)throw new Error('ID_GURU wajib diisi.');if(!nama)throw new Error('NAMA guru wajib diisi.');if(!mapel)throw new Error('MAPEL wajib diisi.');if(['ACTIVE','INACTIVE'].indexOf(status)<0)throw new Error('STATUS harus ACTIVE atau INACTIVE.');
+  const rows=readAdminSchoolGuru_();rows.forEach(function(row){if(Number(row._row)===rowNumber)return;if(clean_(row.ID_GURU).toUpperCase()===id.toUpperCase())throw new Error('ID_GURU sudah terdaftar: '+id);if(nip&&clean_(row.NIP).toUpperCase()===nip.toUpperCase())throw new Error('NIP sudah terdaftar: '+nip);});
+  const row=[id,nip,nama,mapel,status,sertifikasi,ijazah];if(rowNumber>=2)gatewayCall_('SPREADSHEET_UPDATE_ROW',{sheet:SCHOOL_GURU_SHEET,rowNumber:rowNumber,row:row});else gatewayCall_('SPREADSHEET_APPEND',{sheet:SCHOOL_GURU_SHEET,row:row});return getAdminSchoolGuru();
+}
+function deleteAdminSchoolGuru(rowNumber){requireAdminSekolah_();ensureAdminSchoolGuruSheet_();const row=Number(rowNumber);if(row<2)throw new Error('Baris GURU tidak valid.');gatewayCall_('SPREADSHEET_DELETE_ROW',{sheet:SCHOOL_GURU_SHEET,rowNumber:row});return getAdminSchoolGuru();}
+function importAdminSchoolGuru(rows){
+  requireAdminSekolah_();ensureAdminSchoolGuruSheet_();if(!Array.isArray(rows)||!rows.length)throw new Error('Data template GURU kosong.');if(rows.length>500)throw new Error('Maksimal 500 baris per upload template.');const existing=readAdminSchoolGuru_(),ids={},nips={};existing.forEach(function(r){ids[clean_(r.ID_GURU).toUpperCase()]=true;if(clean_(r.NIP))nips[clean_(r.NIP).toUpperCase()]=true;});let inserted=0,skipped=0,errors=[];
+  rows.forEach(function(item,i){const id=clean_(item.ID_GURU),nip=clean_(item.NIP),nama=clean_(item.NAMA),mapel=clean_(item.MAPEL),status=clean_(item.STATUS).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,sertifikasi=clean_(item.SERTIFIKASI),ijazah=clean_(item.IJAZAH);if(!id||!nama||!mapel||['ACTIVE','INACTIVE'].indexOf(status)<0){errors.push('Baris '+(i+2)+': ID_GURU, NAMA, MAPEL wajib dan STATUS harus ACTIVE/INACTIVE.');return;}if(ids[id.toUpperCase()]){skipped++;return;}if(nip&&nips[nip.toUpperCase()]){skipped++;return;}gatewayCall_('SPREADSHEET_APPEND',{sheet:SCHOOL_GURU_SHEET,row:[id,nip,nama,mapel,status,sertifikasi,ijazah]});ids[id.toUpperCase()]=true;if(nip)nips[nip.toUpperCase()]=true;inserted++;});
+  const result=getAdminSchoolGuru();return ok_({inserted:inserted,skipped:skipped,errors:errors,rows:result.data.rows,total:result.data.total},'Template GURU selesai diproses.');
+}
+function getSchoolGuruDirectory(){const session=getSessionContext();if(!session||session.ok!==true||!session.data||!session.data.school)throw new Error('Sesi sekolah tidak tersedia.');const result=readSheetViaGateway(SCHOOL_GURU_SHEET),data=result&&result.data?result.data:result,values=data&&Array.isArray(data.values)?data.values:[];if(values.length<2)return ok_([],'Directory GURU belum memiliki data.');const headers=values[0].map(function(v){return clean_(v).toUpperCase();}),idxId=headers.indexOf('ID_GURU'),idxNip=headers.indexOf('NIP'),idxNama=headers.indexOf('NAMA'),idxMapel=headers.indexOf('MAPEL'),idxStatus=headers.indexOf('STATUS');if(idxNama<0)throw new Error('Kolom NAMA pada GURU tidak ditemukan.');const rows=[];for(let i=1;i<values.length;i++){const nama=clean_(values[i][idxNama]);if(!nama)continue;const status=idxStatus>=0?clean_(values[i][idxStatus]).toUpperCase():'ACTIVE';if(status==='INACTIVE')continue;rows.push({ID_GURU:idxId>=0?clean_(values[i][idxId]):'',NIP:idxNip>=0?clean_(values[i][idxNip]):'',NAMA:nama,MAPEL:idxMapel>=0?clean_(values[i][idxMapel]):'',STATUS:status});}return ok_(rows,'Directory GURU berhasil dimuat.');}
 function ensureAdminSchoolGuruSheet(){const result=ensureAdminSchoolGuruSheet_();return ok_(result&&result.data?result.data:result,'Sheet GURU berhasil diperiksa/dibuat.');}
+
+/* KARYAWAN dipertahankan di AdminSekolah.js agar seluruh administrasi sekolah tetap terpusat. */
+function ensureAdminSchoolKaryawanSheet_(){requireAdminSekolah_();return gatewayCall_('SPREADSHEET_ENSURE_SHEET',{sheet:SCHOOL_KARYAWAN_SHEET,headers:SCHOOL_KARYAWAN_HEADERS.slice()});}
+function readAdminSchoolKaryawan_(){
+  const result=readSheetViaGateway(SCHOOL_KARYAWAN_SHEET),data=result&&result.data?result.data:result,values=data&&Array.isArray(data.values)?data.values:[];
+  if(values.length<2)return [];
+  const headers=values[0].map(function(v){return clean_(v).toUpperCase();}),index={};SCHOOL_KARYAWAN_HEADERS.forEach(function(header){index[header]=headers.indexOf(header);});
+  const missing=SCHOOL_KARYAWAN_HEADERS.filter(function(header){return index[header]<0;});if(missing.length)throw new Error('Header KARYAWAN tidak lengkap: '+missing.join(', '));
+  return values.slice(1).map(function(row,i){if(!row.some(function(v){return clean_(v)!=='';}))return null;return {_row:i+2,ID_KARYAWAN:clean_(row[index.ID_KARYAWAN]),NIP:clean_(row[index.NIP]),NAMA:clean_(row[index.NAMA]),BIDANG_TUGAS:clean_(row[index.BIDANG_TUGAS]),STATUS:clean_(row[index.STATUS]).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,IJAZAH:clean_(row[index.IJAZAH])};}).filter(Boolean);
+}
+function getAdminSchoolKaryawan(){requireAdminSekolah_();ensureAdminSchoolKaryawanSheet_();const rows=readAdminSchoolKaryawan_();return ok_({sheet:SCHOOL_KARYAWAN_SHEET,headers:SCHOOL_KARYAWAN_HEADERS.slice(),rows:rows,total:rows.length,perPage:10},'Data KARYAWAN berhasil dimuat.');}
+function saveAdminSchoolKaryawan(data){
+  requireAdminSekolah_();const payload=data||{};ensureAdminSchoolKaryawanSheet_();const id=clean_(payload.ID_KARYAWAN),nip=clean_(payload.NIP),nama=clean_(payload.NAMA),bidang=clean_(payload.BIDANG_TUGAS),status=clean_(payload.STATUS).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,ijazah=clean_(payload.IJAZAH),rowNumber=Number(payload._row||0);
+  if(!id)throw new Error('ID_KARYAWAN wajib diisi.');if(!nama)throw new Error('NAMA karyawan wajib diisi.');if(!bidang)throw new Error('BIDANG_TUGAS wajib diisi.');if(['ACTIVE','INACTIVE'].indexOf(status)<0)throw new Error('STATUS harus ACTIVE atau INACTIVE.');
+  const rows=readAdminSchoolKaryawan_();rows.forEach(function(row){if(Number(row._row)===rowNumber)return;if(clean_(row.ID_KARYAWAN).toUpperCase()===id.toUpperCase())throw new Error('ID_KARYAWAN sudah terdaftar: '+id);if(nip&&clean_(row.NIP).toUpperCase()===nip.toUpperCase())throw new Error('NIP sudah terdaftar: '+nip);});
+  const row=[id,nip,nama,bidang,status,ijazah];if(rowNumber>=2)gatewayCall_('SPREADSHEET_UPDATE_ROW',{sheet:SCHOOL_KARYAWAN_SHEET,rowNumber:rowNumber,row:row});else gatewayCall_('SPREADSHEET_APPEND',{sheet:SCHOOL_KARYAWAN_SHEET,row:row});return getAdminSchoolKaryawan();
+}
+function deleteAdminSchoolKaryawan(rowNumber){requireAdminSekolah_();ensureAdminSchoolKaryawanSheet_();const row=Number(rowNumber);if(row<2)throw new Error('Baris KARYAWAN tidak valid.');gatewayCall_('SPREADSHEET_DELETE_ROW',{sheet:SCHOOL_KARYAWAN_SHEET,rowNumber:row});return getAdminSchoolKaryawan();}
+function importAdminSchoolKaryawan(rows){
+  requireAdminSekolah_();ensureAdminSchoolKaryawanSheet_();if(!Array.isArray(rows)||!rows.length)throw new Error('Data template KARYAWAN kosong.');if(rows.length>500)throw new Error('Maksimal 500 baris per upload template.');const existing=readAdminSchoolKaryawan_(),ids={},nips={};existing.forEach(function(r){ids[clean_(r.ID_KARYAWAN).toUpperCase()]=true;if(clean_(r.NIP))nips[clean_(r.NIP).toUpperCase()]=true;});let inserted=0,skipped=0,errors=[];
+  rows.forEach(function(item,i){const id=clean_(item.ID_KARYAWAN),nip=clean_(item.NIP),nama=clean_(item.NAMA),bidang=clean_(item.BIDANG_TUGAS),status=clean_(item.STATUS).toUpperCase()||APP_CONFIG.STATUS.ACTIVE,ijazah=clean_(item.IJAZAH);if(!id||!nama||!bidang||['ACTIVE','INACTIVE'].indexOf(status)<0){errors.push('Baris '+(i+2)+': ID_KARYAWAN, NAMA, BIDANG_TUGAS wajib dan STATUS harus ACTIVE/INACTIVE.');return;}if(ids[id.toUpperCase()]){skipped++;return;}if(nip&&nips[nip.toUpperCase()]){skipped++;return;}gatewayCall_('SPREADSHEET_APPEND',{sheet:SCHOOL_KARYAWAN_SHEET,row:[id,nip,nama,bidang,status,ijazah]});ids[id.toUpperCase()]=true;if(nip)nips[nip.toUpperCase()]=true;inserted++;});
+  const result=getAdminSchoolKaryawan();return ok_({inserted:inserted,skipped:skipped,errors:errors,rows:result.data.rows,total:result.data.total},'Template KARYAWAN selesai diproses.');
+}
+function getSchoolKaryawanDirectory(){const session=getSessionContext();if(!session||session.ok!==true||!session.data||!session.data.school)throw new Error('Sesi sekolah tidak tersedia.');const result=readSheetViaGateway(SCHOOL_KARYAWAN_SHEET),data=result&&result.data?result.data:result,values=data&&Array.isArray(data.values)?data.values:[];if(values.length<2)return ok_([],'Directory KARYAWAN belum memiliki data.');const headers=values[0].map(function(v){return clean_(v).toUpperCase();}),idxId=headers.indexOf('ID_KARYAWAN'),idxNip=headers.indexOf('NIP'),idxNama=headers.indexOf('NAMA'),idxBidang=headers.indexOf('BIDANG_TUGAS'),idxStatus=headers.indexOf('STATUS');if(idxNama<0)throw new Error('Kolom NAMA pada KARYAWAN tidak ditemukan.');const rows=[];for(let i=1;i<values.length;i++){const nama=clean_(values[i][idxNama]);if(!nama)continue;const status=idxStatus>=0?clean_(values[i][idxStatus]).toUpperCase():'ACTIVE';if(status==='INACTIVE')continue;rows.push({ID_KARYAWAN:idxId>=0?clean_(values[i][idxId]):'',NIP:idxNip>=0?clean_(values[i][idxNip]):'',NAMA:nama,BIDANG_TUGAS:idxBidang>=0?clean_(values[i][idxBidang]):'',STATUS:status});}return ok_(rows,'Directory KARYAWAN berhasil dimuat.');}
+function ensureAdminSchoolKaryawanSheet(){const result=ensureAdminSchoolKaryawanSheet_();return ok_(result&&result.data?result.data:result,'Sheet KARYAWAN berhasil diperiksa/dibuat.');}
