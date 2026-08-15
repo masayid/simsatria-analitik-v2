@@ -22,8 +22,9 @@ function gatewayRequireAction_(action, payload) {
 
   if (action === 'SPREADSHEET_ENSURE_SHEET') {
     const sheet = gatewayClean_(payload.sheet).toUpperCase();
-    if (sheet !== 'KELAS' && sheet !== 'GURU' && sheet !== 'KARYAWAN') {
-      throw new Error('Gateway hanya mengizinkan pembuatan sheet KELAS, GURU, atau KARYAWAN.');
+    const allowedCreate = ['KELAS','GURU','KARYAWAN','SISWA'];
+    if (allowedCreate.indexOf(sheet) < 0) {
+      throw new Error('Gateway hanya mengizinkan pembuatan sheet KELAS, GURU, KARYAWAN, atau SISWA.');
     }
     if (!Array.isArray(payload.headers) || !payload.headers.length) {
       throw new Error('Header ' + sheet + ' wajib dikirim.');
@@ -48,8 +49,9 @@ function gatewayRequireAction_(action, payload) {
 
   if (action === 'SPREADSHEET_READ') {
     const sheet = gatewayClean_(payload.sheet).toUpperCase();
-    if (sheet !== 'KELAS' && sheet !== 'GURU' && sheet !== 'KARYAWAN' && sheet !== 'TRX_AGENDA_GURU') {
-      throw new Error('Gateway hanya mengizinkan pembacaan sheet KELAS, GURU, KARYAWAN, dan TRX_AGENDA_GURU.');
+    const allowedRead = ['KELAS','GURU','KARYAWAN','TRX_AGENDA_GURU','SISWA'];
+    if (allowedRead.indexOf(sheet) < 0) {
+      throw new Error('Gateway hanya mengizinkan pembacaan sheet KELAS, GURU, KARYAWAN, TRX_AGENDA_GURU, dan SISWA.');
     }
   }
 
