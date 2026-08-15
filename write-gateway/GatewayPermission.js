@@ -1,10 +1,10 @@
-/** Allowlist operasi Write Gateway. */
+/** Allowlist operasi Gateway. */
 function gatewayRequireAction_(action, payload) {
-  const allowed = ['AUTH_LOOKUP_USER', 'SPREADSHEET_APPEND', 'DRIVE_UPLOAD', 'PDF_CREATE'];
+  const allowed = ['AUTH_LOOKUP_USER', 'SPREADSHEET_APPEND', 'SPREADSHEET_READ', 'DRIVE_UPLOAD', 'PDF_CREATE'];
   if (allowed.indexOf(action) < 0) throw new Error('Action gateway tidak diizinkan.');
 
-  // Lookup user adalah operasi read-only yang sengaja tidak menerima
-  // schoolId dari client. Gateway menentukan sekolah dari sumber MASTER/USERS.
+  // Lookup user adalah operasi read-only yang tidak menerima schoolId dari client.
+  // Gateway menentukan sekolah dari MASTER_SEKOLAH lalu membaca USERS sekolah.
   if (action === 'AUTH_LOOKUP_USER') {
     if (!payload || !gatewayClean_(payload.email)) {
       throw new Error('Email user wajib dikirim.');
@@ -28,6 +28,13 @@ function gatewayRequireAction_(action, payload) {
     }
     if (allowedSheets.indexOf(sheet) < 0) {
       throw new Error('Sheet tidak diizinkan untuk gateway: ' + sheet);
+    }
+  }
+
+  if (action === 'SPREADSHEET_READ') {
+    const sheet = gatewayClean_(payload.sheet).toUpperCase();
+    if (sheet !== 'KELAS') {
+      throw new Error('Gateway hanya mengizinkan pembacaan sheet KELAS.');
     }
   }
 
