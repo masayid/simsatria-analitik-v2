@@ -18,6 +18,15 @@ const SCHOOL_USERS_HEADERS = Object.freeze([
   'status'
 ]);
 
+const SCHOOL_KELAS_SHEET = 'KELAS';
+const SCHOOL_KELAS_HEADERS = Object.freeze([
+  'KELAS',
+  'TINGKAT',
+  'JURUSAN',
+  'WALI_KELAS',
+  'STATUS'
+]);
+
 function getAdminSekolahContext() {
   const admin = requireAdminSekolah_();
   const school = admin.school;
@@ -110,7 +119,6 @@ function ensureSchoolUsersSheet_(spreadsheet, masterUser) {
   });
 
   if (!matches) {
-    // Jangan menghapus data USERS lama. Jika kosong, tulis header standar.
     const hasData = sheet.getLastRow() > 1 || sheet.getDataRange().getValues().some(function(row) {
       return row.some(function(v) { return clean_(v) !== ''; });
     });
@@ -118,8 +126,6 @@ function ensureSchoolUsersSheet_(spreadsheet, masterUser) {
       sheet.clear();
       sheet.getRange(1, 1, 1, SCHOOL_USERS_HEADERS.length).setValues([SCHOOL_USERS_HEADERS]);
     } else {
-      // Jika ada header lama, gunakan header tersebut agar data tidak rusak.
-      // Kolom standar hanya ditambahkan bila belum tersedia.
       const headers = currentHeaders.map(clean_);
       SCHOOL_USERS_HEADERS.forEach(function(header) {
         if (headers.map(normalizeHeader_).indexOf(normalizeHeader_(header)) < 0) {
@@ -280,4 +286,134 @@ function ensureAdminSchoolUsersSheet() {
   const admin = requireAdminSekolah_();
   const spreadsheet = SpreadsheetApp.openById(admin.school.spreadsheet_id);
   return ok_(ensureSchoolUsersSheet_(spreadsheet, admin.masterUser), 'Sheet USERS berhasil diperiksa/dibuat.');
+}
+
+/* ================================================================
+ * ADMIN SEKOLAH — KELAS
+ * Sumber KELAS selalu spreadsheet sekolah melalui Write Gateway.
+ * Sheet dibuat otomatis jika belum ada.
+ * ================================================================ */
+function ensureAdminSchoolKelasSheet_() {
+  requireAdminSekolah_();
+  return gatewayCall_('SPREADSHEET_ENSURE_SHEET', {
+    sheet: SCHOOL_KELAS_SHEET,
+    headers: SCHOOL_KELAS_HEADERS.slice()
+  });
+}
+
+function getAdminSchoolKelas() {
+  requireAdminSekolah_();
+  ensureAdminSchoolKelasSheet_();
+
+  const result = readSheetViaGateway(SCHOOL_KELAS_SHEET);
+  const data = result && result.data ? result.data : result;
+  const values = data && Array.isArray(data.values) ? data.values : [];
+
+  if (values.length < 2) {
+    return ok_({
+      sheet: SCHOOL_KELAS_SHEET,
+      headers: SCHOOL_KELAS_HEADERS.slice(),
+      rows: [],
+      total: 0
+    }, 'Sheet KELAS siap digunakan dan belum memiliki data.');
+  }
+
+  const headers = values[0].map(function(v) { return clean_(v).toUpperCase(); });
+  const index = {};
+  SCHOOL_KELAS_HEADERS.forEach(function(header) { index[header] = headers.indexOf(header); });
+  const missing = SCHOOL_KELAS_HEADERS.filter(function(header) { return index[header] < 0; });
+  if (missing.length) throw new Error('Header KELAS tidak lengkap: ' + missing.join(', '));
+
+  const rows = values.slice(1).map(function(row, i) {
+    if (!row.some(function(v) { return clean_(v) !== ''; })) return null;
+    return {
+      _row: i + 2,
+      KELAS: clean_(row[index.KELAS]),
+      TINGKAT: clean_(row[index.TINGKAT]),
+      JURUSAN: clean_(row[index.JURUSAN]),
+      WALI_KELAS: clean_(row[index.WALI_KELAS]),
+      STATUS: clean_(row[index.STATUS]).toUpperCase() || APP_CONFIG.STATUS.ACTIVE
+    };
+  }).filter(Boolean);
+
+  return ok_({
+    sheet: SCHOOL_KELAS_SHEET,
+    headers: SCHOOL_KELAS_HEADERS.slice(),
+    rows: rows,
+    total: rows.length
+  }, 'Data KELAS berhasil dimuat.');
+}
+
+function saveAdminSchoolKelas(data) {
+  requireAdminSekolah_();
+  const payload = data || {};
+  ensureAdminSchoolKelasSheet_();
+
+  const kelas = clean_(payload.KELAS);
+  const tingkat = clean_(payload.TINGKAT).toUpperCase();
+  const jurusan = clean_(payload.JURUSAN);
+  const wali = clean_(payload.WALI_KELAS);
+  const status = clean_(payload.STATUS).toUpperCase() || APP_CONFIG.STATUS.ACTIVE;
+  const rowNumber = Number(payload._row || 0);
+
+  if (!kelas) throw new Error('KELAS wajib diisi.');
+  if (['X','XI','XII'].indexOf(tingkat) < 0) throw new Error('TINGKAT harus X, XI, atau XII.');
+  if (!jurusan) throw new Error('JURUSAN wajib diisi.');
+  if (['ACTIVE','INACTIVE'].indexOf(status) < 0) throw new Error('STATUS tidak valid.');
+
+  const currentResult = readSheetViaGateway(SCHOOL_KELAS_SHEET);
+  const currentData = currentResult && currentResult.data ? currentResult.data : currentResult;
+  const values = currentData && Array.isArray(currentData.values) ? currentData.values : [];
+  const headers = values.length ? values[0].map(function(v) { return clean_(v).toUpperCase(); }) : SCHOOL_KELAS_HEADERS.slice();
+  const idxKelas = headers.indexOf('KELAS');
+  if (idxKelas < 0) throw new Error('Kolom KELAS tidak ditemukan.');
+
+  for (let i = 1; i < values.length; i++) {
+    const existingRow = i + 1;
+    if (rowNumber && existingRow === rowNumber) continue;
+    if (clean_(values[i][idxKelas]).toUpperCase() === kelas.toUpperCase()) {
+      throw new Error('KELAS ' + kelas + ' sudah terdaftar.');
+    }
+  }
+
+  const row = SCHOOL_KELAS_HEADERS.map(function(header) {
+    if (header === 'KELAS') return kelas;
+    if (header === 'TINGKAT') return tingkat;
+    if (header === 'JURUSAN') return jurusan;
+    if (header === 'WALI_KELAS') return wali;
+    if (header === 'STATUS') return status;
+    return '';
+  });
+
+  if (rowNumber >= 2) {
+    gatewayCall_('SPREADSHEET_UPDATE_ROW', {
+      sheet: SCHOOL_KELAS_SHEET,
+      rowNumber: rowNumber,
+      row: row
+    });
+  } else {
+    gatewayCall_('SPREADSHEET_APPEND', {
+      sheet: SCHOOL_KELAS_SHEET,
+      row: row
+    });
+  }
+
+  return getAdminSchoolKelas();
+}
+
+function deleteAdminSchoolKelas(rowNumber) {
+  requireAdminSekolah_();
+  ensureAdminSchoolKelasSheet_();
+  const row = Number(rowNumber);
+  if (!(row >= 2)) throw new Error('Baris KELAS tidak valid.');
+  gatewayCall_('SPREADSHEET_DELETE_ROW', {
+    sheet: SCHOOL_KELAS_SHEET,
+    rowNumber: row
+  });
+  return getAdminSchoolKelas();
+}
+
+function ensureAdminSchoolKelasSheet() {
+  const result = ensureAdminSchoolKelasSheet_();
+  return ok_(result && result.data ? result.data : result, 'Sheet KELAS berhasil diperiksa/dibuat.');
 }
