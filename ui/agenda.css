@@ -27,6 +27,21 @@
 #content #agendaTableWrap tbody tr:hover{background:#f8fcfa}
 #content .agenda-empty{padding:22px;text-align:center;color:#718078;background:#fafcfb;border:1px dashed #d7e5dd;border-radius:12px}
 
+/* Fallback styling for current Agenda markup when Bootstrap CDN is unavailable */
+#content .container-fluid{width:100%;box-sizing:border-box}
+#content .px-0{padding-left:0!important;padding-right:0!important}
+#content .card{background:#fff;border:1px solid #e3ebe6;border-radius:18px;box-sizing:border-box}
+#content .border-0{border:0!important}
+#content .shadow-sm{box-shadow:0 8px 28px rgba(11,61,46,.08)}
+#content .card-body{padding:22px;box-sizing:border-box}
+#content .p-3{padding:18px!important}.p-md-4{padding:24px!important}
+#content .d-flex{display:flex}.flex-wrap{flex-wrap:wrap}.justify-content-between{justify-content:space-between}.align-items-center{align-items:center}.gap-2{gap:8px}.mb-1{margin-bottom:4px}.mb-2{margin-bottom:8px}.mb-3{margin-bottom:14px}.ms-md-auto{margin-left:auto}
+#content .text-uppercase{text-transform:uppercase}.small{font-size:12px}.fw-semibold{font-weight:700}.fw-bold{font-weight:800}.h4{font-size:28px}.text-success{color:#238653!important}.text-secondary{color:#6b7b73!important}.bg-body-tertiary{background:#f6faf7!important}
+#content .btn{display:inline-flex;align-items:center;justify-content:center;gap:5px;border:1px solid transparent;border-radius:9px;padding:9px 13px;background:#fff;color:#24463a;font:inherit;font-weight:700;cursor:pointer;text-decoration:none;box-sizing:border-box}.btn-success{background:#238653!important;color:#fff!important;border-color:#238653!important}.btn-outline-success{background:#fff!important;color:#176c47!important;border-color:#9fcbb2!important}.btn-outline-secondary{background:#fff!important;color:#566a61!important;border-color:#cad8d1!important}.btn-danger{background:#c84747!important;color:#fff!important;border-color:#c84747!important}.btn-link{background:none!important;border:0!important;color:#1267c4!important}.btn-sm{padding:6px 9px!important;font-size:12px!important}
+#content .form-label{display:block;font-size:13px;font-weight:800;color:#274b3c;margin:0 0 6px}.form-text{font-size:11px;color:#75857d}.form-control,.form-select{display:block;width:100%;box-sizing:border-box;border:1px solid #d5e1db;border-radius:10px;background:#fff;color:#20382e;padding:10px 12px;font:inherit;line-height:1.4;outline:none}.form-control:focus,.form-select:focus{border-color:#4da475;box-shadow:0 0 0 3px rgba(35,134,83,.10)}
+#content .row{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}.g-2{gap:10px!important}.g-3{gap:16px!important}.col-12{grid-column:span 12;min-width:0}.col-md-3{grid-column:span 3}.col-md-4{grid-column:span 4}.col-md-6{grid-column:span 6}.col-md-8{grid-column:span 8}.col-md-auto{grid-column:auto}.row-cols-2{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.row-cols-md-4{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}.row-cols-md-5{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px}.row-cols-md-3{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#content .alert{padding:12px 14px;border-radius:10px}.alert-light{background:#fafcfb;color:#65756d}.border{border:1px solid #dfe8e3!important}.table-responsive{width:100%;overflow:auto}.rounded{border-radius:10px}.table{width:100%;border-collapse:collapse}.table th,.table td{border:1px solid #e3ebe6;padding:8px}.table-success{background:#eaf6ef}.align-middle{vertical-align:middle}.text-center{text-align:center}.text-nowrap{white-space:nowrap}.d-inline-flex{display:inline-flex}.py-4{padding-top:20px;padding-bottom:20px}.spinner-border{display:inline-block;width:1rem;height:1rem;border:.14em solid currentColor;border-right-color:transparent;border-radius:50%;animation:agendaSpin .75s linear infinite;vertical-align:-.15em}@keyframes agendaSpin{to{transform:rotate(360deg)}}
+
 /* Modal mandiri */
 #agendaModal{position:fixed!important;inset:0!important;z-index:10000!important;display:none!important;background:rgba(8,30,21,.56);padding:12px;box-sizing:border-box;align-items:center;justify-content:center}
 #agendaModal.agenda-modal-open{display:flex!important}
@@ -42,59 +57,26 @@
 #agendaModal .modal-body::-webkit-scrollbar{width:10px}
 #agendaModal .modal-body::-webkit-scrollbar-track{background:#edf3ef;border-radius:10px}
 #agendaModal .modal-body::-webkit-scrollbar-thumb{background:#9fc5af;border-radius:10px;border:2px solid #edf3ef}
-#agendaModal .agenda-form-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
-#agendaModal .agenda-col-4{grid-column:span 4}.agenda-col-8{grid-column:span 8}.agenda-col-12{grid-column:span 12}.agenda-col-6{grid-column:span 6}
-#agendaModal .agenda-label{display:block;margin:0 0 6px;font-size:13px;font-weight:800;color:#274b3c}
-#agendaModal .agenda-hint{font-weight:500;color:#7a8982;font-size:12px}
-#agendaModal .agenda-input,#agendaModal .agenda-select,#agendaModal .agenda-textarea,#agendaModal input.form-control,#agendaModal select.form-select,#agendaModal textarea.form-control{display:block;width:100%;box-sizing:border-box;border:1px solid #d5e1db;border-radius:10px;background:#fff;color:#20382e;padding:10px 12px;font:inherit;line-height:1.4;outline:none}
-#agendaModal textarea{resize:vertical;min-height:82px}
-#agendaModal .agenda-input:focus,#agendaModal .agenda-select:focus,#agendaModal .agenda-textarea:focus,#agendaModal .form-control:focus,#agendaModal .form-select:focus{border-color:#4da475;box-shadow:0 0 0 3px rgba(35,134,83,.10)}
-#agendaModal .bg-body-secondary{background:#eef3f0!important;color:#64736c!important}
-#agendaModal .form-text{font-size:11px;color:#75857d;margin-top:4px}
 #agendaModal .modal-body .row{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;margin:0}
 #agendaModal .modal-body .row > [class*="col-12"]{grid-column:span 12;padding:0;min-width:0}
-#agendaModal .modal-body .row > .col-md-4{grid-column:span 4}
-#agendaModal .modal-body .row > .col-md-6{grid-column:span 6}
-#agendaModal .modal-body .row > .col-md-8{grid-column:span 8}
-#agendaModal .modal-body .row-cols-2,#agendaModal .modal-body .row-cols-md-4,#agendaModal .modal-body .row-cols-md-5,#agendaModal .modal-body .row-cols-md-3{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
-#agendaModal .modal-body .row-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-#agendaModal .modal-body .row-cols-md-5{grid-template-columns:repeat(5,minmax(0,1fr))}
-#agendaModal .modal-body .row-cols-md-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-#agendaModal .modal-body [id^="agendaSesi"] .form-check,#agendaModal .modal-body [id^="agendaDpl"] .form-check,#agendaModal .modal-body [id^="agendaPengalaman"] .form-check,#agendaModal .modal-body [id^="agendaPrinsip"] .form-check{margin:0;min-width:0}
-#agendaModal .form-check{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid #dbe6e0;border-radius:9px;background:#fff;min-height:42px;box-sizing:border-box}
+#agendaModal .modal-body .row > .col-md-4{grid-column:span 4}.modal-body .row > .col-md-6{grid-column:span 6}.modal-body .row > .col-md-8{grid-column:span 8}
+#agendaModal .modal-body .row-cols-2,#agendaModal .modal-body .row-cols-md-4,#agendaModal .modal-body .row-cols-md-5,#agendaModal .modal-body .row-cols-md-3{display:grid;gap:7px}
+#agendaModal .modal-body .row-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}#agendaModal .modal-body .row-cols-md-4{grid-template-columns:repeat(4,minmax(0,1fr))}#agendaModal .modal-body .row-cols-md-5{grid-template-columns:repeat(5,minmax(0,1fr))}#agendaModal .modal-body .row-cols-md-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#agendaModal .form-check{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid #dbe6e0;border-radius:9px;background:#fff;min-height:42px;box-sizing:border-box;margin:0}
 #agendaModal .form-check:hover{border-color:#9dcab2;background:#f8fcfa}
 #agendaModal .form-check-input{width:17px;height:17px;flex:0 0 17px;margin:0!important;accent-color:#238653;position:static;float:none}
 #agendaModal .form-check-label{font-size:13px;line-height:1.25;color:#29473b;cursor:pointer;min-width:0}
+#agendaModal textarea{resize:vertical;min-height:82px}
+#agendaModal .bg-body-secondary{background:#eef3f0!important;color:#64736c!important}
+#agendaModal .form-text{font-size:11px;color:#75857d;margin-top:4px}
 #agendaModal .modal-footer{flex:0 0 auto;padding:14px 22px;border-top:1px solid #e4ebe7;background:#fff;display:flex;justify-content:flex-end;gap:8px}
-#agendaModal .modal-footer button{border:0;border-radius:9px;padding:10px 15px;font:inherit;font-weight:700;cursor:pointer}
-#agendaModal .modal-footer .btn-success{background:#238653;color:#fff}
-#agendaModal .modal-footer .btn-outline-secondary{background:#fff;color:#566a61;border:1px solid #cad8d1}
-#agendaModal .btn-close{display:none}
-body.agenda-modal-body-open{overflow:hidden!important}
+#agendaModal .modal-footer button{border:0;border-radius:9px;padding:10px 15px;font:inherit;font-weight:700;cursor:pointer}.modal-footer .btn-success{background:#238653!important;color:#fff!important}.modal-footer .btn-outline-secondary{background:#fff!important;color:#566a61!important;border:1px solid #cad8d1!important}
+#agendaModal .btn-close{display:none}body.agenda-modal-body-open{overflow:hidden!important}
 
 @media(max-width:900px){
-  #content .agenda-card-body{padding:18px}
-  #content .agenda-head{align-items:flex-start;flex-direction:column}
-  #content .agenda-filter-grid{grid-template-columns:1fr 1fr}
-  #content .agenda-filter-actions{grid-column:1/-1;justify-content:flex-start}
-  #agendaModal{padding:0}
-  #agendaModal .modal-dialog{width:100%;height:100%;}
-  #agendaModal .modal-content{border-radius:0}
-  #agendaModal .modal-header{padding:14px 16px}
-  #agendaModal .modal-body{padding:16px}
-  #agendaModal .modal-footer{padding:12px 16px}
-  #agendaModal .modal-body .row > .col-md-4,#agendaModal .modal-body .row > .col-md-6,#agendaModal .modal-body .row > .col-md-8{grid-column:span 12}
-  #agendaModal .modal-body .row-cols-md-5,#agendaModal .modal-body .row-cols-md-4,#agendaModal .modal-body .row-cols-md-3{grid-template-columns:repeat(2,minmax(0,1fr))}
+#content .card-body{padding:18px}.h4{font-size:23px}.row{grid-template-columns:repeat(2,minmax(0,1fr))}.col-12,.col-md-3,.col-md-4,.col-md-6,.col-md-8{grid-column:span 2}.col-md-auto{grid-column:span 2}.ms-md-auto{margin-left:0}.row-cols-md-5,.row-cols-md-4,.row-cols-md-3{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#agendaModal{padding:0}#agendaModal .modal-dialog{width:100%;height:100%}#agendaModal .modal-content{border-radius:0}#agendaModal .modal-header{padding:14px 16px}#agendaModal .modal-body{padding:16px}#agendaModal .modal-footer{padding:12px 16px}#agendaModal .modal-body .row > .col-md-4,#agendaModal .modal-body .row > .col-md-6,#agendaModal .modal-body .row > .col-md-8{grid-column:span 12}#agendaModal .modal-body .row-cols-md-5,#agendaModal .modal-body .row-cols-md-4,#agendaModal .modal-body .row-cols-md-3{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:560px){
-  #content .agenda-title{font-size:22px}
-  #content .agenda-filter-grid{grid-template-columns:1fr}
-  #content .agenda-filter-actions{grid-column:auto;display:grid;grid-template-columns:1fr 1fr;width:100%}
-  #content .agenda-filter-actions .agenda-btn{width:100%}
-  #agendaModal .modal-header{padding:13px 14px}
-  #agendaModal .modal-title{font-size:19px}
-  #agendaModal .modal-body{padding:13px}
-  #agendaModal .modal-body .row-cols-2,#agendaModal .modal-body .row-cols-md-5,#agendaModal .modal-body .row-cols-md-4,#agendaModal .modal-body .row-cols-md-3{grid-template-columns:1fr}
-  #agendaModal .modal-footer{padding:11px 13px}
-  #agendaModal .modal-footer button{flex:1}
+#content .card-body{padding:14px}.row{grid-template-columns:1fr}.col-12,.col-md-3,.col-md-4,.col-md-6,.col-md-8,.col-md-auto{grid-column:span 1}.agenda-filter-actions{display:grid!important;grid-template-columns:1fr 1fr;width:100%}.row-cols-2,.row-cols-md-5,.row-cols-md-4,.row-cols-md-3{grid-template-columns:1fr!important}#agendaModal .modal-title{font-size:19px}#agendaModal .modal-body{padding:13px}#agendaModal .modal-footer{padding:11px 13px}#agendaModal .modal-footer button{flex:1}
 }
