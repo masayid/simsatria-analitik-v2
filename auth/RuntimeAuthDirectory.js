@@ -2,11 +2,16 @@
  * RUNTIME AUTH DIRECTORY
  *
  * Runtime Web App berjalan sebagai USER_ACCESSING.
- * User biasa TIDAK membaca MASTER Spreadsheet secara langsung.
- * SETUP_OWNER melakukan sinkronisasi data MASTER ke Script Properties.
  *
- * File ini sengaja menjadi dependency eksplisit untuk Auth.js,
- * Role.js, dan Permission.js.
+ * SUMBER USER OTORITATIF:
+ * - OWNER        : Script Property SETUP_OWNER_EMAIL
+ * - ADMIN_SEKOLAH: MASTER_USER
+ * - USER SEKOLAH : sheet USERS pada Spreadsheet sekolah masing-masing
+ *
+ * MASTER_USER TIDAK BOLEH menjadi sumber GURU/KARYAWAN/SISWA/WALI_KELAS.
+ *
+ * SETUP_OWNER melakukan sinkronisasi data ke Script Properties agar runtime
+ * tidak perlu membaca MASTER Spreadsheet setiap request user biasa.
  */
 const RUNTIME_AUTH_PROP = Object.freeze({
   USERS: 'RUNTIME_AUTH_USERS_V1',
@@ -17,15 +22,25 @@ const RUNTIME_AUTH_PROP = Object.freeze({
 });
 
 /**
- * Jalankan MANUAL dari Apps Script Editor sebagai SETUP_OWNER.
- * Tidak boleh dijalankan oleh user aplikasi biasa.
+ * Sinkronisasi MANUAL dari Apps Script Editor sebagai SETUP_OWNER.
+ *
+ * Penting:
+ * getAllSchoolUsers_() hanya mengambil:
+ *   1. ADMIN_SEKOLAH dari MASTER_USER
+ *   2. user sekolah dari sheet USERS masing-masing sekolah aktif
+ *
+ * Dengan demikian email yang hanya ada di MASTER_USER dengan role GURU,
+ * KARYAWAN, SISWA, atau WALI_KELAS TIDAK akan masuk Runtime Auth Directory.
  */
 function setup29_syncRuntimeAuthDirectory() {
   requireSetupAccess_();
 
   const master = getMasterSpreadsheet_();
 
-  const users = readSheetObjects_(master, MASTER.USER).map(function(row) {
+  // USER runtime berasal dari sumber yang benar:
+  // ADMIN_SEKOLAH -> MASTER_USER
+  // user sekolah  -> USERS masing-masing Spreadsheet sekolah.
+  const users = getAllSchoolUsers_().map(function(row) {
     return {
       id_user: clean_(row.id_user),
       id_sekolah: clean_(row.id_sekolah).toUpperCase(),
@@ -34,6 +49,8 @@ function setup29_syncRuntimeAuthDirectory() {
       role: clean_(row.role).toUpperCase(),
       status: clean_(row.status).toUpperCase()
     };
+  }).filter(function(row) {
+    return row.email && row.id_sekolah && row.status !== APP_CONFIG.STATUS.INACTIVE;
   });
 
   const schools = readSheetObjects_(master, MASTER.SEKOLAH).map(function(row) {
@@ -78,12 +95,14 @@ function setup29_syncRuntimeAuthDirectory() {
     ok: true,
     users: users.length,
     activeUsers: users.filter(function(u) { return u.status === 'ACTIVE'; }).length,
+    adminSekolah: users.filter(function(u) { return u.role === APP_CONFIG.ROLE.ADMIN_SEKOLAH; }).length,
+    schoolUsers: users.filter(function(u) { return u.role !== APP_CONFIG.ROLE.ADMIN_SEKOLAH; }).length,
     schools: schools.length,
-    activeSchools: schools.filter(function(s) { return s.status === 'ACTIVE'; }).length,
+    activeSchools: schools.filter(function(s) { return s.status === APP_CONFIG.STATUS.ACTIVE; }).length,
     rolePermissions: rolePermissions.length,
     menus: menus.length,
     syncedAt: props.getProperty(RUNTIME_AUTH_PROP.SYNCED_AT),
-    message: 'Runtime Auth Directory berhasil disinkronkan dari MASTER.'
+    message: 'Runtime Auth Directory berhasil disinkronkan: ADMIN_SEKOLAH dari MASTER_USER, user sekolah dari USERS masing-masing sekolah.'
   };
 
   Logger.log(JSON.stringify(result, null, 2));
