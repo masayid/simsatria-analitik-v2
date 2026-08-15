@@ -1,9 +1,10 @@
 <script>
-(function () {
+(function(){
   const originalSelectMenu = window.selectMenu;
   let agendaOptions = {sesi:[],dpl:[],pengalaman:[],prinsip:[],kelas:[]};
   let agendaRows = [];
   let editingRow = null;
+  let agendaModalInstance = null;
 
   window.selectMenu = function(menuCode){
     const code = String(menuCode || '').toUpperCase();
@@ -21,272 +22,270 @@
     const content = document.getElementById('content');
     if(!content) return;
     const today = new Date().toISOString().slice(0,10);
-
     content.innerHTML = `
-      <section class="card agenda-page">
-        <div class="card-body agenda-body">
-          <div class="eyebrow">GURU</div>
-          <div class="agenda-head">
-            <div class="agenda-title">
-              <h3>Agenda Mengajar</h3>
-              <p class="muted">Kelola agenda mengajar dan cetak laporan.</p>
+      <section class="container-fluid px-0">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-3 p-md-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+              <div>
+                <div class="text-uppercase small fw-semibold text-success">GURU</div>
+                <h3 class="h4 fw-bold mb-1">Agenda Mengajar</h3>
+                <div class="text-secondary">Kelola agenda mengajar dan cetak laporan.</div>
+              </div>
+              <button class="btn btn-success" type="button" onclick="openAgendaModal()">＋ Tambah Agenda</button>
             </div>
-            <button class="primary-btn agenda-add-btn" type="button" onclick="openAgendaModal()">＋ Tambah Agenda</button>
-          </div>
 
-          <div class="agenda-filter">
-            <div class="filter-field">
-              <label>Tanggal awal</label>
-              <input id="agendaFilterAwal" type="date" value="${today}">
+            <div class="card border-0 bg-body-tertiary mb-3">
+              <div class="card-body p-2 p-md-3">
+                <div class="row g-2 align-items-end">
+                  <div class="col-12 col-md-3">
+                    <label for="agendaFilterAwal" class="form-label small fw-semibold mb-1">Tanggal awal</label>
+                    <input id="agendaFilterAwal" class="form-control form-control-sm" type="date" value="${today}">
+                  </div>
+                  <div class="col-12 col-md-3">
+                    <label for="agendaFilterAkhir" class="form-label small fw-semibold mb-1">Tanggal akhir</label>
+                    <input id="agendaFilterAkhir" class="form-control form-control-sm" type="date" value="${today}">
+                  </div>
+                  <div class="col-12 col-md-auto ms-md-auto d-flex flex-wrap gap-2">
+                    <button class="btn btn-success btn-sm" type="button" onclick="tampilkanAgendaMengajar()">🔎 Tampilkan</button>
+                    <button class="btn btn-outline-success btn-sm" type="button" onclick="cetakAgendaMengajar()">🖨️ Cetak Agenda</button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="filter-field">
-              <label>Tanggal akhir</label>
-              <input id="agendaFilterAkhir" type="date" value="${today}">
-            </div>
-            <div class="filter-actions">
-              <button class="primary-btn" type="button" onclick="tampilkanAgendaMengajar()">🔎 Tampilkan</button>
-              <button class="secondary-btn" type="button" onclick="cetakAgendaMengajar()">🖨️ Cetak Agenda</button>
-            </div>
-          </div>
 
-          <div id="agendaStatus"></div>
-          <div id="agendaTableWrap" class="agenda-table-wrap">
-            <div class="empty-agenda">Pilih rentang tanggal lalu klik <b>Tampilkan</b>.</div>
+            <div id="agendaStatus" class="mb-2"></div>
+            <div id="agendaTableWrap">
+              <div class="alert alert-light border mb-0">Pilih rentang tanggal lalu klik <b>Tampilkan</b>.</div>
+            </div>
           </div>
         </div>
       </section>
 
-      <div id="agendaModal" class="agenda-modal" aria-hidden="true">
-        <div class="agenda-modal-box">
-          <div class="agenda-modal-head">
-            <div><div class="eyebrow">AGENDA MENGAJAR</div><h3 id="agendaModalTitle">Tambah Agenda</h3></div>
-            <button type="button" class="modal-close" onclick="closeAgendaModal()">×</button>
-          </div>
-          <form id="agendaMengajarForm" onsubmit="simpanAgendaMengajarUI(event)">
-            <div class="modal-grid">
-              <div><label>Tanggal</label><input id="agendaTanggal" type="date" required></div>
-              <div><label>Nama</label><input id="agendaNama" type="text" readonly></div>
-              <div><label>Jam ke- <span class="hint">pilih lebih dari satu</span></label><div id="agendaSesi" class="check-grid jam-grid"></div></div>
-              <div><label>Kelas</label><select id="agendaKelas" required><option value="">Memuat kelas...</option></select><div id="agendaKelasInfo" class="field-info"></div></div>
-              <div><label>Tujuan Pembelajaran</label><textarea id="agendaTujuan" rows="3" required></textarea></div>
-              <div><label>Materi Pembelajaran</label><textarea id="agendaMateri" rows="3" required></textarea></div>
-              <div><label>DPL</label><div id="agendaDpl" class="check-grid dpl-grid"></div></div>
-              <div><label>Pengalaman Belajar</label><div id="agendaPengalaman" class="check-grid experience-grid"></div></div>
-              <div class="full-modal"><label>Prinsip Pembelajaran</label><div id="agendaPrinsip" class="check-grid principle-grid"></div></div>
-              <div class="full-modal"><label>Rekap Nama Siswa Tidak Masuk</label><textarea id="agendaTidakMasuk" rows="2" placeholder="Kosongkan jika semua hadir."></textarea></div>
-              <div class="full-modal"><label>Bukti Fisik <span class="hint">gambar, maksimal 2 MB</span></label><input id="agendaBuktiFisik" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><div id="agendaFileInfo" class="file-info">Belum ada gambar dipilih.</div></div>
+      <div class="modal fade" id="agendaModal" tabindex="-1" aria-labelledby="agendaModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+          <div class="modal-content">
+            <div class="modal-header">
+              <div>
+                <div class="text-uppercase small fw-semibold text-success">AGENDA MENGAJAR</div>
+                <h5 class="modal-title fw-bold" id="agendaModalTitle">Tambah Agenda</h5>
+              </div>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
-            <div class="modal-actions"><button id="agendaSimpanBtn" class="primary-btn" type="submit">💾 Simpan Agenda</button><button type="button" class="secondary-btn" onclick="closeAgendaModal()">Batal</button></div>
-          </form>
+            <form id="agendaMengajarForm" onsubmit="simpanAgendaMengajarUI(event)">
+              <div class="modal-body">
+                <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                    <label for="agendaTanggal" class="form-label fw-semibold">Tanggal</label>
+                    <input id="agendaTanggal" class="form-control" type="date" required>
+                  </div>
+                  <div class="col-12 col-md-8">
+                    <label for="agendaNama" class="form-label fw-semibold">Nama</label>
+                    <input id="agendaNama" class="form-control bg-body-secondary" type="text" readonly>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Jam ke- <span class="text-secondary small">pilih satu atau lebih</span></label>
+                    <div id="agendaSesi" class="row row-cols-2 row-cols-md-5 g-1"></div>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label for="agendaKelas" class="form-label fw-semibold">Kelas</label>
+                    <select id="agendaKelas" class="form-select" required><option value="">Memuat kelas...</option></select>
+                    <div id="agendaKelasInfo" class="form-text"></div>
+                  </div>
+                  <div class="col-12 col-md-8">
+                    <label for="agendaTujuan" class="form-label fw-semibold">Tujuan Pembelajaran</label>
+                    <textarea id="agendaTujuan" class="form-control" rows="3" required></textarea>
+                  </div>
+                  <div class="col-12">
+                    <label for="agendaMateri" class="form-label fw-semibold">Materi Pembelajaran</label>
+                    <textarea id="agendaMateri" class="form-control" rows="3" required></textarea>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold">Dimensi Profil Lulusan (DPL)</label>
+                    <div id="agendaDpl" class="row row-cols-2 row-cols-md-4 g-1"></div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Pengalaman Belajar</label>
+                    <div id="agendaPengalaman" class="row row-cols-2 g-1"></div>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label fw-semibold">Prinsip Pembelajaran</label>
+                    <div id="agendaPrinsip" class="row row-cols-2 row-cols-md-3 g-1"></div>
+                  </div>
+                  <div class="col-12">
+                    <label for="agendaTidakMasuk" class="form-label fw-semibold">Rekap Nama Siswa Tidak Masuk</label>
+                    <textarea id="agendaTidakMasuk" class="form-control" rows="2" placeholder="Kosongkan jika semua hadir."></textarea>
+                  </div>
+                  <div class="col-12">
+                    <label for="agendaBuktiFisik" class="form-label fw-semibold">Bukti Fisik <span class="text-secondary small">gambar, maksimal 2 MB</span></label>
+                    <input id="agendaBuktiFisik" class="form-control" type="file" accept="image/jpeg,image/png,image/webp,image/gif">
+                    <div id="agendaFileInfo" class="form-text">Belum ada gambar dipilih.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button id="agendaSimpanBtn" class="btn btn-success" type="submit">💾 Simpan Agenda</button>
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Batal</button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>`;
 
+    const modalEl = document.getElementById('agendaModal');
+    if(window.bootstrap && modalEl) agendaModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
     loadAgendaOptions_();
     tampilkanAgendaMengajar();
   };
 
   function loadAgendaOptions_(){
     google.script.run.withSuccessHandler(function(response){
-      if(!response || response.ok !== true || !response.data){ showAgendaStatus_('❌ Pilihan Agenda Guru tidak dapat dimuat.',true); return; }
+      if(!response || response.ok !== true || !response.data){ showAgendaStatus_('Pilihan Agenda Guru tidak dapat dimuat.',true); return; }
       agendaOptions = response.data;
-      setChecks_('agendaSesi',agendaOptions.sesi || [],'jam');
-      setChecks_('agendaDpl',agendaOptions.dpl || [],'dpl');
-      setChecks_('agendaPengalaman',agendaOptions.pengalaman || [],'pengalaman');
-      setChecks_('agendaPrinsip',agendaOptions.prinsip || [],'prinsip');
-      setSelect_('agendaKelas',agendaOptions.kelas || [],'Pilih kelas...');
-      const nama = document.getElementById('agendaNama'); if(nama) nama.value = agendaOptions.nama || '';
-      const info = document.getElementById('agendaKelasInfo'); if(info) info.textContent = agendaOptions.sumberKelas === 'KELAS' ? 'Sumber: sheet KELAS' : 'Sumber: MOCK (X, XI, XII)';
+      setChecks_('agendaSesi', agendaOptions.sesi || [], 'jam');
+      setChecks_('agendaDpl', agendaOptions.dpl || [], 'dpl');
+      setChecks_('agendaPengalaman', agendaOptions.pengalaman || [], 'pengalaman');
+      setChecks_('agendaPrinsip', agendaOptions.prinsip || [], 'prinsip');
+      setSelect_('agendaKelas', agendaOptions.kelas || [], 'Pilih kelas...');
+      const nama = document.getElementById('agendaNama');
+      if(nama) nama.value = agendaOptions.nama || '';
+      const info = document.getElementById('agendaKelasInfo');
+      if(info) info.textContent = agendaOptions.sumberKelas === 'KELAS' ? 'Sumber: sheet KELAS' : 'Sumber: MOCK (X, XI, XII)';
     }).withFailureHandler(function(e){ showAgendaStatus_(errorText_(e),true); }).getAgendaMengajarFormOptions();
   }
 
   window.tampilkanAgendaMengajar = function(){
-    const a = document.getElementById('agendaFilterAwal');
-    const b = document.getElementById('agendaFilterAkhir');
+    const a=document.getElementById('agendaFilterAwal'), b=document.getElementById('agendaFilterAkhir'), wrap=document.getElementById('agendaTableWrap');
     if(!a || !b) return;
-    if(!a.value || !b.value){ showAgendaStatus_('❌ Tanggal awal dan tanggal akhir wajib diisi.',true); return; }
-    if(a.value > b.value){ showAgendaStatus_('❌ Tanggal awal tidak boleh lebih besar dari tanggal akhir.',true); return; }
-    const wrap = document.getElementById('agendaTableWrap');
-    if(wrap) wrap.innerHTML = '<div class="loading-agenda">Memuat agenda...</div>';
+    if(!a.value || !b.value){showAgendaStatus_('Tanggal awal dan tanggal akhir wajib diisi.',true);return;}
+    if(a.value>b.value){showAgendaStatus_('Tanggal awal tidak boleh lebih besar dari tanggal akhir.',true);return;}
+    if(wrap) wrap.innerHTML='<div class="text-center text-secondary py-4"><div class="spinner-border spinner-border-sm me-2" role="status"></div>Memuat agenda...</div>';
     google.script.run.withSuccessHandler(function(response){
-      if(!response || response.ok !== true){ showAgendaStatus_('❌ '+((response && response.message)||'Gagal membaca agenda.'),true); return; }
-      agendaRows = response.data && response.data.rows ? response.data.rows : [];
+      if(!response || response.ok!==true){showAgendaStatus_((response&&response.message)||'Gagal membaca agenda.',true);return;}
+      agendaRows=response.data&&response.data.rows?response.data.rows:[];
       renderAgendaTable_(agendaRows);
       showAgendaStatus_('',false);
-    }).withFailureHandler(function(e){ if(wrap) wrap.innerHTML = '<div class="empty-agenda">Gagal memuat data.</div>'; showAgendaStatus_(errorText_(e),true); }).getAgendaMengajarList(a.value,b.value);
+    }).withFailureHandler(function(e){if(wrap)wrap.innerHTML='<div class="alert alert-danger mb-0">Gagal memuat data.</div>';showAgendaStatus_(errorText_(e),true);}).getAgendaMengajarList(a.value,b.value);
   };
 
   function renderAgendaTable_(rows){
-    const wrap = document.getElementById('agendaTableWrap'); if(!wrap) return;
-    if(!rows.length){ wrap.innerHTML = '<div class="empty-agenda">Tidak ada agenda pada rentang tanggal tersebut.</div>'; return; }
-    let html = '<div class="table-meta"><b>'+rows.length+'</b> agenda ditemukan</div><div class="table-scroll"><table class="agenda-table"><thead><tr><th>No</th><th>Tanggal</th><th>Jam ke-</th><th>Kelas</th><th>Tujuan Pembelajaran</th><th>Materi</th><th>DPL</th><th>Pengalaman</th><th>Prinsip</th><th>Siswa Tidak Masuk</th><th>Bukti</th><th>Aksi</th></tr></thead><tbody>';
+    const wrap=document.getElementById('agendaTableWrap');if(!wrap)return;
+    if(!rows.length){wrap.innerHTML='<div class="alert alert-light border mb-0">Tidak ada agenda pada rentang tanggal tersebut.</div>';return;}
+    let html='<div class="d-flex justify-content-between align-items-center mb-2"><span class="small text-secondary"><b>'+rows.length+'</b> agenda ditemukan</span></div>';
+    html+='<div class="table-responsive rounded border"><table class="table table-sm table-hover table-bordered align-middle mb-0"><thead class="table-success"><tr>';
+    html+='<th class="text-center text-nowrap">No</th><th class="text-nowrap">Tanggal</th><th>Jam ke-</th><th>Kelas</th><th>Tujuan Pembelajaran</th><th>Materi</th><th>DPL</th><th>Pengalaman</th><th>Prinsip</th><th>Siswa Tidak Masuk</th><th class="text-center">Bukti</th><th class="text-center text-nowrap">Aksi</th></tr></thead><tbody>';
     rows.forEach(function(r,i){
-      html += '<tr><td>'+ (i+1) +'</td><td>'+esc_(r.tanggal)+'</td><td>'+esc_(r.sesi)+'</td><td><span class="class-badge">'+esc_(r.kelas)+'</span></td><td>'+esc_(r.tujuan_pembelajaran)+'</td><td>'+esc_(r.materi_pembelajaran)+'</td><td>'+esc_(r.dpl)+'</td><td>'+esc_(r.pengalaman_belajar)+'</td><td>'+esc_(r.prinsip_pembelajaran)+'</td><td>'+esc_(r.rekap_siswa_tidak_masuk || '-')+'</td><td>'+(r.bukti_fisik ? '<a class="file-link" href="'+escAttr_(r.bukti_fisik)+'" target="_blank" rel="noopener noreferrer">Lihat</a>' : '-')+'</td><td><div class="crud-actions"><button class="edit-btn" onclick="editAgendaMengajar('+i+')">Edit</button><button class="delete-btn" onclick="hapusAgendaMengajarUI('+i+')">Hapus</button></div></td></tr>';
+      html+='<tr><td class="text-center">'+(i+1)+'</td><td class="text-nowrap">'+esc_(r.tanggal)+'</td><td>'+esc_(r.sesi)+'</td><td><span class="badge text-bg-light border">'+esc_(r.kelas)+'</span></td><td>'+esc_(r.tujuan_pembelajaran)+'</td><td>'+esc_(r.materi_pembelajaran)+'</td><td>'+esc_(r.dpl)+'</td><td>'+esc_(r.pengalaman_belajar)+'</td><td>'+esc_(r.prinsip_pembelajaran)+'</td><td>'+esc_(r.rekap_siswa_tidak_masuk||'-')+'</td><td class="text-center">'+(r.bukti_fisik?'<a class="btn btn-link btn-sm p-0" href="'+escAttr_(r.bukti_fisik)+'" target="_blank" rel="noopener noreferrer">Lihat</a>':'-')+'</td><td class="text-center text-nowrap"><div class="d-inline-flex gap-1"><button class="btn btn-outline-success btn-sm" type="button" onclick="editAgendaMengajar('+i+')">Edit</button><button class="btn btn-outline-danger btn-sm" type="button" onclick="hapusAgendaMengajarUI('+i+')">Hapus</button></div></td></tr>';
     });
-    html += '</tbody></table></div>';
-    wrap.innerHTML = html;
+    html+='</tbody></table></div>';
+    wrap.innerHTML=html;
   }
 
-  window.openAgendaModal = function(row){
-    const modal = document.getElementById('agendaModal'); if(!modal) return;
-    editingRow = row == null ? null : row;
-    const item = editingRow == null ? null : agendaRows[editingRow];
-    document.getElementById('agendaModalTitle').textContent = item ? 'Edit Agenda Mengajar' : 'Tambah Agenda';
-    document.getElementById('agendaTanggal').value = item ? item.tanggal : new Date().toISOString().slice(0,10);
-    document.getElementById('agendaNama').value = agendaOptions.nama || (item && item.nama) || '';
-    document.getElementById('agendaKelas').value = item ? item.kelas : '';
-    document.getElementById('agendaTujuan').value = item ? item.tujuan_pembelajaran : '';
-    document.getElementById('agendaMateri').value = item ? item.materi_pembelajaran : '';
-    document.getElementById('agendaTidakMasuk').value = item ? item.rekap_siswa_tidak_masuk : '';
-    clearChecks_('agendaSesi'); clearChecks_('agendaDpl'); clearChecks_('agendaPengalaman'); clearChecks_('agendaPrinsip');
-    if(item){ setCheckedValues_('agendaSesi',item.sesi); setCheckedValues_('agendaDpl',item.dpl); setCheckedValues_('agendaPengalaman',item.pengalaman_belajar); setCheckedValues_('agendaPrinsip',item.prinsip_pembelajaran); }
-    const fi = document.getElementById('agendaBuktiFisik'); if(fi) fi.value='';
-    const info = document.getElementById('agendaFileInfo'); if(info) info.textContent = item && item.bukti_fisik ? 'Bukti tersimpan. Pilih file baru jika ingin mengganti.' : 'Belum ada gambar dipilih.';
-    modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+  window.openAgendaModal=function(row){
+    const modalEl=document.getElementById('agendaModal');if(!modalEl)return;
+    editingRow=row==null?null:row;
+    const item=editingRow==null?null:agendaRows[editingRow];
+    const title=document.getElementById('agendaModalTitle');if(title)title.textContent=item?'Edit Agenda Mengajar':'Tambah Agenda';
+    valSet_('agendaTanggal',item?item.tanggal:new Date().toISOString().slice(0,10));
+    valSet_('agendaNama',agendaOptions.nama||(item&&item.nama)||'');
+    valSet_('agendaKelas',item?item.kelas:'');
+    valSet_('agendaTujuan',item?item.tujuan_pembelajaran:'');
+    valSet_('agendaMateri',item?item.materi_pembelajaran:'');
+    valSet_('agendaTidakMasuk',item?item.rekap_siswa_tidak_masuk:'');
+    clearChecks_('agendaSesi');clearChecks_('agendaDpl');clearChecks_('agendaPengalaman');clearChecks_('agendaPrinsip');
+    if(item){setCheckedValues_('agendaSesi',item.sesi);setCheckedValues_('agendaDpl',item.dpl);setCheckedValues_('agendaPengalaman',item.pengalaman_belajar);setCheckedValues_('agendaPrinsip',item.prinsip_pembelajaran);}
+    const fi=document.getElementById('agendaBuktiFisik');if(fi)fi.value='';
+    const info=document.getElementById('agendaFileInfo');if(info)info.textContent=item&&item.bukti_fisik?'Bukti tersimpan. Pilih file baru jika ingin mengganti.':'Belum ada gambar dipilih.';
+    if(window.bootstrap) bootstrap.Modal.getOrCreateInstance(modalEl).show();
   };
 
-  window.closeAgendaModal = function(){ const modal=document.getElementById('agendaModal'); if(modal){modal.classList.remove('show');modal.setAttribute('aria-hidden','true');} editingRow=null; };
-  window.editAgendaMengajar = function(index){ openAgendaModal(index); };
+  window.editAgendaMengajar=function(index){openAgendaModal(index);};
+  window.closeAgendaModal=function(){const el=document.getElementById('agendaModal');if(el&&window.bootstrap)bootstrap.Modal.getOrCreateInstance(el).hide();editingRow=null;};
 
-  window.simpanAgendaMengajarUI = function(event){
+  window.simpanAgendaMengajarUI=function(event){
     event.preventDefault();
-    const btn=document.getElementById('agendaSimpanBtn'); if(btn){btn.disabled=true;btn.textContent='⏳ Menyimpan...';}
-    const fileInput=document.getElementById('agendaBuktiFisik'); const file=fileInput && fileInput.files && fileInput.files[0];
-    if(file && !isAgendaImage_(file)){finishAgendaButton_();showAgendaStatus_('❌ Bukti fisik hanya boleh berupa gambar.',true);return;}
-    if(file && file.size>2*1024*1024){finishAgendaButton_();showAgendaStatus_('❌ Ukuran bukti fisik maksimal 2 MB.',true);return;}
+    const btn=document.getElementById('agendaSimpanBtn');if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Menyimpan...';}
+    const fileInput=document.getElementById('agendaBuktiFisik'),file=fileInput&&fileInput.files&&fileInput.files[0];
+    if(file&&!isAgendaImage_(file)){finishAgendaButton_();showAgendaStatus_('Bukti fisik hanya boleh berupa gambar.',true);return;}
+    if(file&&file.size>2*1024*1024){finishAgendaButton_();showAgendaStatus_('Ukuran bukti fisik maksimal 2 MB.',true);return;}
     const data={tanggal:val_('agendaTanggal'),sesi:getChecked_('agendaSesi'),kelas:val_('agendaKelas'),tujuan:val_('agendaTujuan'),materi:val_('agendaMateri'),dpl:getChecked_('agendaDpl'),pengalaman:getChecked_('agendaPengalaman'),prinsip:getChecked_('agendaPrinsip'),rekapTidakMasuk:val_('agendaTidakMasuk')};
-    if(!data.sesi){finishAgendaButton_();showAgendaStatus_('❌ Pilih minimal satu Jam ke-.',true);return;}
-    if(editingRow != null) data.rowNumber=agendaRows[editingRow].rowNumber;
-    const save = function(){
-      const fn = editingRow == null ? 'simpanAgendaMengajar' : 'updateAgendaMengajar';
+    if(!data.sesi){finishAgendaButton_();showAgendaStatus_('Pilih minimal satu Jam ke-.',true);return;}
+    if(editingRow!=null)data.rowNumber=agendaRows[editingRow].rowNumber;
+    const save=function(){
+      const fn=editingRow==null?'simpanAgendaMengajar':'updateAgendaMengajar';
       google.script.run.withSuccessHandler(function(response){
         finishAgendaButton_();
-        if(!response || response.ok!==true){showAgendaStatus_('❌ '+((response&&response.message)||'Agenda gagal disimpan.'),true);return;}
-        closeAgendaModal(); showAgendaStatus_('✅ '+((response&&response.message)||'Agenda berhasil disimpan.'),false); tampilkanAgendaMengajar();
+        if(!response||response.ok!==true){showAgendaStatus_((response&&response.message)||'Agenda gagal disimpan.',true);return;}
+        closeAgendaModal();showAgendaStatus_((response&&response.message)||'Agenda berhasil disimpan.',false);tampilkanAgendaMengajar();
       }).withFailureHandler(function(e){finishAgendaButton_();showAgendaStatus_(errorText_(e),true);})[fn](data);
     };
-    if(!file){
-      if(editingRow != null && agendaRows[editingRow]) data.buktiFisik=agendaRows[editingRow].bukti_fisik || '';
-      save(); return;
-    }
+    if(!file){if(editingRow!=null&&agendaRows[editingRow])data.buktiFisik=agendaRows[editingRow].bukti_fisik||'';save();return;}
     const reader=new FileReader();
     reader.onload=function(){
       const base64=String(reader.result||'').split(',')[1]||'';
-      if(!base64){finishAgendaButton_();showAgendaStatus_('❌ Gambar tidak dapat dibaca.',true);return;}
+      if(!base64){finishAgendaButton_();showAgendaStatus_('Gambar tidak dapat dibaca.',true);return;}
       google.script.run.withSuccessHandler(function(response){
-        if(!response || response.ok!==true){finishAgendaButton_();showAgendaStatus_('❌ '+((response&&response.message)||'Upload bukti fisik gagal.'),true);return;}
+        if(!response||response.ok!==true){finishAgendaButton_();showAgendaStatus_((response&&response.message)||'Upload bukti fisik gagal.',true);return;}
         data.buktiFisik=response.data&&response.data.url?response.data.url:'';
-        if(!data.buktiFisik){finishAgendaButton_();showAgendaStatus_('❌ URL bukti fisik tidak dikembalikan Gateway.',true);return;}
+        if(!data.buktiFisik){finishAgendaButton_();showAgendaStatus_('URL bukti fisik tidak dikembalikan Gateway.',true);return;}
         save();
       }).withFailureHandler(function(e){finishAgendaButton_();showAgendaStatus_(errorText_(e),true);}).simpanBuktiFisikAgendaMengajar({name:file.name,mimeType:file.type,sizeBytes:file.size,base64:base64});
     };
-    reader.onerror=function(){finishAgendaButton_();showAgendaStatus_('❌ Gambar tidak dapat dibaca.',true);};
+    reader.onerror=function(){finishAgendaButton_();showAgendaStatus_('Gambar tidak dapat dibaca.',true);};
     reader.readAsDataURL(file);
   };
 
-  window.hapusAgendaMengajarUI = function(index){
-    const item=agendaRows[index]; if(!item) return;
-    if(!confirm('Hapus agenda tanggal '+item.tanggal+' kelas '+item.kelas+'?')) return;
+  window.hapusAgendaMengajarUI=function(index){
+    const item=agendaRows[index];if(!item)return;
+    if(!confirm('Hapus agenda tanggal '+item.tanggal+' kelas '+item.kelas+'?'))return;
     google.script.run.withSuccessHandler(function(response){
-      if(!response || response.ok!==true){showAgendaStatus_('❌ '+((response&&response.message)||'Agenda gagal dihapus.'),true);return;}
-      showAgendaStatus_('✅ Agenda berhasil dihapus.',false); tampilkanAgendaMengajar();
+      if(!response||response.ok!==true){showAgendaStatus_((response&&response.message)||'Agenda gagal dihapus.',true);return;}
+      showAgendaStatus_('Agenda berhasil dihapus.',false);
+      tampilkanAgendaMengajar();
     }).withFailureHandler(function(e){showAgendaStatus_(errorText_(e),true);}).hapusAgendaMengajar(item.rowNumber);
   };
 
-  window.cetakAgendaMengajar = function(){
-    const a=val_('agendaFilterAwal'), b=val_('agendaFilterAkhir');
-    if(!a||!b){showAgendaStatus_('❌ Tentukan tanggal awal dan tanggal akhir.',true);return;}
-    if(a>b){showAgendaStatus_('❌ Tanggal awal tidak boleh lebih besar dari tanggal akhir.',true);return;}
-    showAgendaStatus_('⏳ Membentuk PDF agenda...',false);
+  window.cetakAgendaMengajar=function(){
+    const a=val_('agendaFilterAwal'),b=val_('agendaFilterAkhir');
+    if(!a||!b){showAgendaStatus_('Filter tanggal belum tersedia.',true);return;}
+    if(a>b){showAgendaStatus_('Tanggal awal tidak boleh lebih besar dari tanggal akhir.',true);return;}
+    showAgendaStatus_('Membuat PDF agenda...',false);
     google.script.run.withSuccessHandler(function(response){
-      if(!response || response.ok!==true){showAgendaStatus_('❌ '+((response&&response.message)||'PDF gagal dibuat.'),true);return;}
+      if(!response||response.ok!==true){showAgendaStatus_((response&&response.message)||'PDF gagal dibuat.',true);return;}
       const url=response.data&&response.data.url?response.data.url:'';
-      if(!url){showAgendaStatus_('❌ URL PDF tidak tersedia.',true);return;}
-      const tab=window.open(url,'_blank','noopener,noreferrer');
-      if(!tab){showAgendaStatus_('❌ Browser memblokir tab baru. Izinkan pop-up untuk SIM SATRIA.',true);return;}
-      showAgendaStatus_('✅ PDF agenda berhasil dibuat dan dibuka pada tab baru.',false);
+      if(url)window.open(url,'_blank','noopener,noreferrer');
+      showAgendaStatus_(url?'PDF agenda berhasil dibuat.':'PDF berhasil dibuat, tetapi URL tidak tersedia.',!url);
     }).withFailureHandler(function(e){showAgendaStatus_(errorText_(e),true);}).cetakAgendaMengajarPdf(a,b);
   };
 
   function setChecks_(id,items,prefix){
-    const c=document.getElementById(id); if(!c)return; c.innerHTML='';
-    (items||[]).forEach(function(item,i){
-      const label=document.createElement('label'); label.className='check-item';
-      const input=document.createElement('input'); input.type='checkbox'; input.value=item; input.id=prefix+'_'+i;
-      const span=document.createElement('span'); span.textContent=item; label.appendChild(input);label.appendChild(span);c.appendChild(label);
-    });
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML=(items||[]).map(function(item,i){
+      const idv=id+'_'+prefix+'_'+i;
+      return '<div class="col"><div class="form-check border rounded px-2 py-1 h-100"><input class="form-check-input" type="checkbox" id="'+idv+'" value="'+escAttr_(item)+'"><label class="form-check-label small" for="'+idv+'">'+esc_(item)+'</label></div></div>';
+    }).join('');
   }
-  function setSelect_(id,items,placeholder){const s=document.getElementById(id);if(!s)return;s.innerHTML='';const p=document.createElement('option');p.value='';p.textContent=placeholder;s.appendChild(p);(items||[]).forEach(function(v){const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});}
-  function clearChecks_(id){const c=document.getElementById(id);if(c)c.querySelectorAll('input[type=checkbox]').forEach(function(x){x.checked=false;});}
-  function setCheckedValues_(id,value){const wanted=String(value||'').split(',').map(function(x){return x.trim().toLowerCase();}).filter(Boolean);const c=document.getElementById(id);if(!c)return;c.querySelectorAll('input[type=checkbox]').forEach(function(x){x.checked=wanted.indexOf(String(x.value).toLowerCase())>=0;});}
-  function getChecked_(id){const c=document.getElementById(id);return c?Array.from(c.querySelectorAll('input[type=checkbox]:checked')).map(function(x){return x.value;}).join(', '):'';}
-  function val_(id){const e=document.getElementById(id);return e?String(e.value||'').trim():'';}
-  function isAgendaImage_(file){return !!file && /^image\/(jpeg|png|webp|gif)$/i.test(String(file.type||''));}
-  function finishAgendaButton_(){const b=document.getElementById('agendaSimpanBtn');if(b){b.disabled=false;b.textContent='💾 Simpan Agenda';}}
-  function showAgendaStatus_(message,error){const e=document.getElementById('agendaStatus');if(!e)return;e.innerHTML=message?'<div class="agenda-status '+(error?'agenda-error':'agenda-success')+'">'+esc_(message)+'</div>':'';}
-  function errorText_(e){return '❌ '+(e&&e.message?e.message:'Terjadi kesalahan.');}
-  function esc_(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');}
+  function setSelect_(id,items,placeholder){
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML='<option value="">'+esc_(placeholder)+'</option>'+(items||[]).map(function(item){return '<option value="'+escAttr_(item)+'">'+esc_(item)+'</option>';}).join('');
+  }
+  function getChecked_(id){return Array.from(document.querySelectorAll('#'+id+' input[type="checkbox"]:checked')).map(function(el){return el.value;}).join(', ');}
+  function clearChecks_(id){document.querySelectorAll('#'+id+' input[type="checkbox"]').forEach(function(el){el.checked=false;});}
+  function setCheckedValues_(id,value){
+    const values=String(value||'').split(',').map(function(v){return v.trim().toLowerCase();}).filter(Boolean);
+    document.querySelectorAll('#'+id+' input[type="checkbox"]').forEach(function(el){el.checked=values.indexOf(String(el.value).trim().toLowerCase())>=0;});
+  }
+  function val_(id){const el=document.getElementById(id);return el?String(el.value||'').trim():'';}
+  function valSet_(id,value){const el=document.getElementById(id);if(el)el.value=value==null?'':value;}
+  function finishAgendaButton_(){const btn=document.getElementById('agendaSimpanBtn');if(btn){btn.disabled=false;btn.innerHTML='💾 Simpan Agenda';}}
+  function isAgendaImage_(file){return !!file&&['image/jpeg','image/png','image/webp','image/gif'].indexOf(String(file.type||'').toLowerCase())>=0;}
+  function showAgendaStatus_(message,isError){
+    const el=document.getElementById('agendaStatus');if(!el)return;
+    if(!message){el.innerHTML='';return;}
+    el.innerHTML='<div class="alert '+(isError?'alert-danger':'alert-success')+' py-2 mb-2" role="alert">'+esc_(message)+'</div>';
+  }
+  function errorText_(e){return e&&e.message?e.message:String(e||'Terjadi kesalahan.');}
+  function esc_(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');}
   function escAttr_(v){return esc_(v).replace(/javascript:/gi,'');}
 })();
 </script>
-<style>
-/* =========================================================
-   AGENDA MENGAJAR — responsive, compact, no page-level overflow
-   ========================================================= */
-.agenda-page,
-.agenda-page *{box-sizing:border-box}
-.agenda-page{width:100%;max-width:100%;min-width:0;overflow:hidden}
-.agenda-body{width:100%;max-width:100%;min-width:0;overflow:hidden}
-.agenda-head{display:flex;justify-content:space-between;gap:14px;align-items:center;min-width:0}
-.agenda-title{min-width:0}
-.agenda-title h3{margin-bottom:4px}
-.agenda-title p{margin:0}
-.agenda-add-btn{white-space:nowrap;flex:0 0 auto}
-.agenda-filter{display:grid;grid-template-columns:minmax(150px,190px) minmax(150px,190px) minmax(0,1fr);gap:10px;align-items:end;background:#f3f8f5;border:1px solid #dce9e3;border-radius:14px;padding:12px;margin-top:14px;width:100%;max-width:100%;min-width:0}
-.filter-field{min-width:0}
-.agenda-filter label,.modal-grid label{display:block;font-weight:700;font-size:.88rem;margin-bottom:5px}
-.agenda-filter input,.modal-grid input,.modal-grid select,.modal-grid textarea{width:100%;max-width:100%;min-width:0;padding:9px 10px;border:1px solid #d5e2dc;border-radius:9px;background:#fff;font:inherit}
-.filter-actions{display:flex;justify-content:flex-end;align-items:center;gap:7px;min-width:0;flex-wrap:wrap}
-.primary-btn,.secondary-btn,.edit-btn,.delete-btn{border:0;border-radius:9px;padding:9px 13px;font-weight:700;cursor:pointer;white-space:nowrap}
-.primary-btn{background:#0b3d2e;color:#fff}
-.secondary-btn{background:#eaf2ee;color:#164536}
-.edit-btn{background:#eaf2ee;color:#164536;padding:6px 9px}
-.delete-btn{background:#fff0f0;color:#9a2b2b;padding:6px 9px}
-.agenda-status{margin-top:10px;padding:9px 12px;border-radius:9px;overflow-wrap:anywhere}
-.agenda-error{background:#fff0f0;color:#8b2222}.agenda-success{background:#edf8f0;color:#185c3e}
-.agenda-table-wrap{margin-top:12px;border:1px solid #dce9e3;border-radius:14px;overflow:hidden;background:#fff;width:100%;max-width:100%;min-width:0}
-.table-scroll{display:block;width:100%;max-width:100%;min-width:0;overflow-x:auto;overflow-y:auto;max-height:62vh;-webkit-overflow-scrolling:touch}
-.agenda-table{width:100%;min-width:1320px;border-collapse:collapse;font-size:.82rem}
-.agenda-table th{position:sticky;top:0;z-index:2;background:#e9f3ee;color:#183f33;text-align:left;padding:9px;border-bottom:1px solid #ccdcd5;white-space:nowrap}
-.agenda-table td{padding:8px 9px;border-bottom:1px solid #e8efeb;vertical-align:top;line-height:1.35;overflow-wrap:anywhere}
-.agenda-table tbody tr:hover{background:#f8fbf9}
-.class-badge{display:inline-block;padding:3px 7px;border-radius:20px;background:#edf5f0;font-weight:700;white-space:nowrap}
-.crud-actions{display:flex;gap:5px;white-space:nowrap}.file-link{color:#0b6848;font-weight:700;text-decoration:none;white-space:nowrap}
-.table-meta{padding:9px 12px;background:#f8fbf9;color:#5b7168}.empty-agenda,.loading-agenda{text-align:center;padding:32px;color:#73867e}
-.agenda-modal{position:fixed;inset:0;background:rgba(10,35,26,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:9999}
-.agenda-modal.show{display:flex}.agenda-modal-box{width:min(900px,100%);max-width:100%;max-height:92vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
-.agenda-modal-head{display:flex;justify-content:space-between;align-items:center;padding:17px 20px;background:linear-gradient(135deg,#0b3d2e,#1f7137);color:#fff}.agenda-modal-head h3{margin:2px 0 0}.modal-close{border:0;background:transparent;color:#fff;font-size:30px;line-height:1;cursor:pointer}
-.modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:18px;min-width:0}.full-modal{grid-column:1/-1}
-.check-grid{display:grid;gap:5px;margin-top:4px}.jam-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:30px}.dpl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.experience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.principle-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
-.check-item{display:flex!important;align-items:center;gap:7px;min-height:28px;padding:2px 3px;margin:0!important;font-weight:400!important;cursor:pointer;font-size:.82rem;min-width:0}
-.check-item input{appearance:none!important;width:17px!important;height:17px!important;min-width:17px!important;padding:0!important;margin:0!important;border:1px solid #bdcbc4!important;border-radius:4px!important;background:#fff!important;cursor:pointer}
-.check-item input:checked{background:#0b3d2e!important;border-color:#0b3d2e!important}.check-item input:checked:after{content:'✓';display:block;color:#fff;font-size:13px;line-height:15px;text-align:center;font-weight:700}.check-item span{line-height:1.2;overflow-wrap:anywhere}
-.hint{font-size:.76rem;font-weight:400;opacity:.65}.field-info,.file-info{margin-top:4px;font-size:.78rem;color:#687b72}.modal-actions{display:flex;gap:8px;padding:0 18px 18px}.modal-actions button{min-width:120px}.muted{opacity:.7}
-
-@media(max-width:900px){
-  .agenda-filter{grid-template-columns:1fr 1fr}
-  .filter-actions{grid-column:1/-1;justify-content:flex-start}
-  .agenda-table{min-width:1320px}
-}
-@media(max-width:600px){
-  .agenda-head{align-items:stretch;flex-direction:column}
-  .agenda-add-btn{width:100%}
-  .agenda-filter{grid-template-columns:1fr;padding:10px}
-  .filter-actions{grid-column:auto;display:grid;grid-template-columns:1fr 1fr;width:100%}
-  .filter-actions button{width:100%;min-width:0;padding-left:8px;padding-right:8px}
-  .modal-grid{grid-template-columns:1fr;padding:14px}.full-modal{grid-column:auto}
-  .dpl-grid,.experience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .principle-grid{grid-template-columns:1fr}.jam-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .agenda-modal{padding:7px}.agenda-modal-box{max-height:96vh;border-radius:14px}
-  .agenda-modal-head{padding:14px}.modal-actions{padding:0 14px 14px}.modal-actions button{min-width:0;flex:1}
-}
-</style>
