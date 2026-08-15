@@ -1,24 +1,18 @@
 /**
  * SIM SATRIA — MASTER ADMIN
  *
- * Pengaturan MASTER_* hanya boleh diakses oleh SETUP_OWNER.
+ * Pengaturan MASTER_* hanya boleh diakses oleh OWNER aplikasi.
  * Proteksi dilakukan di server, bukan hanya disembunyikan dari frontend.
  */
 
 function requireMasterOwner_() {
   const activeEmail = clean_(Session.getActiveUser().getEmail()).toLowerCase();
-  const ownerEmail = clean_(PropertiesService.getScriptProperties()
-    .getProperty(APP_CONFIG.PROP.SETUP_OWNER_EMAIL)).toLowerCase();
 
-  if (!ownerEmail) {
-    throw new Error('SETUP_OWNER_EMAIL belum dikonfigurasi.');
-  }
-
-  if (!activeEmail || activeEmail !== ownerEmail) {
+  if (!isAppOwner_(activeEmail)) {
     throw new Error('Pengaturan MASTER hanya dapat diakses oleh OWNER aplikasi.');
   }
 
-  return ownerEmail;
+  return activeEmail;
 }
 
 function getMasterAdminContext() {
