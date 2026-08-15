@@ -50,6 +50,23 @@
       // Fallback hanya bila browser tidak mengizinkan defineProperty.
       window.SATRIA_SESSION = (typeof SATRIA_SESSION !== 'undefined') ? SATRIA_SESSION : null;
     }
+
+    // ADMIN_SEKOLAH > Kelola Siswa harus menjadi halaman penuh.
+    // Dashboard/welcome dan kartu Akses Aplikasi tidak boleh tetap terlihat
+    // di belakang panel SISWA.
+    (function bindAdminSiswaPageGuard_(){
+      var originalLoad = window.loadAdminSiswa;
+      if (typeof originalLoad !== 'function') return;
+      window.loadAdminSiswa = function(){
+        var welcome = document.getElementById('welcome');
+        var permission = document.getElementById('permissionSection');
+        var master = document.getElementById('masterAdminPanel');
+        if (welcome) welcome.style.display = 'none';
+        if (permission) permission.style.display = 'none';
+        if (master) master.style.display = 'none';
+        return originalLoad.apply(this, arguments);
+      };
+    })();
   </script>
   <?!= include('ui/karyawan'); ?>
   <?!= include('ui/agendaguru'); ?>
