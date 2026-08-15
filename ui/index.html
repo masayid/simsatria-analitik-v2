@@ -35,11 +35,20 @@
   </div>
   <?!= include('ui/js'); ?>
   <script>
-    // ui/js menyimpan session pada global lexical SATRIA_SESSION.
-    // Modul terpisah seperti ui/karyawan membaca window.SATRIA_SESSION.
-    // Bridge ini hanya mengekspos referensi yang sama, tanpa mengubah data session.
-    if (typeof SATRIA_SESSION !== 'undefined') {
-      window.SATRIA_SESSION = SATRIA_SESSION;
+    // ui/js menyimpan SATRIA_SESSION sebagai lexical variable.
+    // Jangan menyalin nilainya sekali saja karena saat script ini berjalan
+    // session biasanya masih null dan baru terisi secara asynchronous.
+    // Gunakan getter agar modul sekolah selalu membaca session terbaru.
+    try {
+      Object.defineProperty(window, 'SATRIA_SESSION', {
+        configurable: true,
+        enumerable: false,
+        get: function(){ return SATRIA_SESSION; },
+        set: function(value){ SATRIA_SESSION = value; }
+      });
+    } catch (e) {
+      // Fallback hanya bila browser tidak mengizinkan defineProperty.
+      window.SATRIA_SESSION = (typeof SATRIA_SESSION !== 'undefined') ? SATRIA_SESSION : null;
     }
   </script>
   <?!= include('ui/karyawan'); ?>
