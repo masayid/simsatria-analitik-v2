@@ -60,19 +60,19 @@
                 <textarea id="agendaMateri" rows="3" required></textarea>
               </div>
 
-              <div>
-                <label>DPL <span class="hint">(bisa pilih lebih dari 1)</span></label>
-                <select id="agendaDpl" class="multi-select" multiple size="5"></select>
+              <div class="check-section">
+                <label>DPL <span class="hint">(pilih satu atau lebih)</span></label>
+                <div id="agendaDpl" class="check-grid dpl-grid"></div>
               </div>
 
-              <div>
-                <label>Pengalaman Belajar <span class="hint">(bisa pilih lebih dari 1)</span></label>
-                <select id="agendaPengalaman" class="multi-select" multiple size="4"></select>
+              <div class="check-section">
+                <label>Pengalaman Belajar <span class="hint">(pilih satu atau lebih)</span></label>
+                <div id="agendaPengalaman" class="check-grid experience-grid"></div>
               </div>
 
-              <div>
-                <label>Prinsip Pembelajaran <span class="hint">(bisa pilih lebih dari 1)</span></label>
-                <select id="agendaPrinsip" class="multi-select" multiple size="3"></select>
+              <div class="check-section full-check-section">
+                <label>Prinsip Pembelajaran <span class="hint">(pilih satu atau lebih)</span></label>
+                <div id="agendaPrinsip" class="check-grid principle-grid"></div>
               </div>
 
               <div style="grid-column:1/-1">
@@ -134,9 +134,9 @@
         }
         const data = response.data;
         setAgendaOptions_('agendaSesi', data.sesi || []);
-        setAgendaOptions_('agendaDpl', data.dpl || []);
-        setAgendaOptions_('agendaPengalaman', data.pengalaman || []);
-        setAgendaOptions_('agendaPrinsip', data.prinsip || []);
+        setAgendaChecks_('agendaDpl', data.dpl || [], 'dpl');
+        setAgendaChecks_('agendaPengalaman', data.pengalaman || [], 'pengalaman');
+        setAgendaChecks_('agendaPrinsip', data.prinsip || [], 'prinsip');
         setAgendaOptions_('agendaKelas', data.kelas || [], 'Pilih kelas...');
 
         const nama = document.getElementById('agendaNama');
@@ -182,9 +182,9 @@
       kelas: document.getElementById('agendaKelas').value.trim(),
       tujuan: document.getElementById('agendaTujuan').value.trim(),
       materi: document.getElementById('agendaMateri').value.trim(),
-      dpl: getAgendaSelected_('agendaDpl'),
-      pengalaman: getAgendaSelected_('agendaPengalaman'),
-      prinsip: getAgendaSelected_('agendaPrinsip'),
+      dpl: getAgendaChecked_('agendaDpl'),
+      pengalaman: getAgendaChecked_('agendaPengalaman'),
+      prinsip: getAgendaChecked_('agendaPrinsip'),
       rekapTidakMasuk: document.getElementById('agendaTidakMasuk').value.trim(),
       buktiFisik: ''
     };
@@ -208,9 +208,13 @@
             const el = document.getElementById(id);
             if (el) el.value = '';
           });
-          ['agendaSesi','agendaDpl','agendaPengalaman','agendaPrinsip'].forEach(function (id) {
+          ['agendaSesi'].forEach(function (id) {
             const el = document.getElementById(id);
             if (el) Array.from(el.options).forEach(function (o) { o.selected = false; });
+          });
+          ['agendaDpl','agendaPengalaman','agendaPrinsip'].forEach(function (id) {
+            const el = document.getElementById(id);
+            if (el) el.querySelectorAll('input[type="checkbox"]').forEach(function (cb) { cb.checked = false; });
           });
           if (fileInput) fileInput.value = '';
           const info = document.getElementById('agendaFileInfo');
@@ -298,11 +302,40 @@
     });
   }
 
+  function setAgendaChecks_(id, items, prefix) {
+    const container = document.getElementById(id);
+    if (!container) return;
+    container.innerHTML = '';
+    (items || []).forEach(function (item, index) {
+      const label = document.createElement('label');
+      label.className = 'check-item';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.name = id;
+      input.value = item;
+      input.id = prefix + '_' + index;
+      const text = document.createElement('span');
+      text.textContent = item;
+      label.appendChild(input);
+      label.appendChild(text);
+      container.appendChild(label);
+    });
+  }
+
   function getAgendaSelected_(id) {
     const select = document.getElementById(id);
     if (!select) return '';
     return Array.from(select.selectedOptions || [])
       .map(function (option) { return option.value; })
+      .filter(Boolean)
+      .join(', ');
+  }
+
+  function getAgendaChecked_(id) {
+    const container = document.getElementById(id);
+    if (!container) return '';
+    return Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
+      .map(function (input) { return input.value; })
       .filter(Boolean)
       .join(', ');
   }
@@ -332,7 +365,7 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
+      .replace(/\"/g, '&quot;')
       .replace(/'/g, '&#039;');
   }
 })();
@@ -347,6 +380,17 @@
 .multi-select option:checked{font-weight:700}
 .hint{font-size:.82rem;font-weight:400;opacity:.65}
 .field-info,.file-info{margin-top:6px;font-size:.88rem;opacity:.72}
+.check-section{min-width:0}
+.full-check-section{grid-column:1/-1}
+.check-grid{display:grid;gap:9px;margin-top:7px;padding:2px 0}
+.dpl-grid{grid-template-columns:1fr}
+.experience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.principle-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.check-item{display:flex!important;align-items:center;gap:10px;min-height:42px;padding:6px 2px;margin:0!important;font-weight:400!important;cursor:pointer;line-height:1.25}
+.check-item input[type="checkbox"]{appearance:none;width:28px!important;height:28px!important;min-width:28px;padding:0!important;margin:0!important;border:1px solid #d7dedb;border-radius:6px;background:#fff;cursor:pointer;position:relative}
+.check-item input[type="checkbox"]:checked{background:#0b3d2e;border-color:#0b3d2e}
+.check-item input[type="checkbox"]:checked::after{content:'✓';position:absolute;left:6px;top:1px;color:#fff;font-size:20px;font-weight:700}
+.check-item span{font-size:1rem}
 .agenda-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
 .primary-btn,.secondary-btn{border:0;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer}
 .primary-btn{background:#0b3d2e;color:#fff}
@@ -356,5 +400,11 @@
 .agenda-error{background:#fff1f1;color:#8b2222}
 .agenda-success{background:#edf8f0;color:#185c3e}
 .muted{opacity:.7}
-@media(max-width:700px){.form-grid{grid-template-columns:1fr}.form-grid>div[style*="grid-column"]{grid-column:auto!important}}
+@media(max-width:700px){
+  .form-grid{grid-template-columns:1fr}
+  .form-grid>div[style*="grid-column"]{grid-column:auto!important}
+  .full-check-section{grid-column:auto}
+  .principle-grid{grid-template-columns:1fr}
+  .experience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style>
