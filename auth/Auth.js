@@ -5,10 +5,7 @@ function getCurrentUser_() {
   return email.toLowerCase();
 }
 
-/**
- * OWNER aplikasi ditentukan oleh Script Property SETUP_OWNER_EMAIL.
- * OWNER tidak wajib menjadi baris pada MASTER_USER.
- */
+/** OWNER aplikasi ditentukan oleh Script Property SETUP_OWNER_EMAIL. */
 function isAppOwner_(email) {
   const target = clean_(email).toLowerCase();
   const owner = clean_(PropertiesService.getScriptProperties()
@@ -19,18 +16,18 @@ function isAppOwner_(email) {
 /**
  * Runtime authentication untuk deployment USER_ACCESSING.
  *
- * SUMBER IDENTITAS USER SEKOLAH:
- * - ADMIN_SEKOLAH : MASTER_USER
- * - GURU/WALI_KELAS/KARYAWAN/SISWA/dll : USERS pada Spreadsheet sekolah
+ * Jalur identitas:
+ * - OWNER         : Script Property SETUP_OWNER_EMAIL.
+ * - ADMIN_SEKOLAH : Gateway -> MASTER_USER.
+ * - user sekolah : Gateway -> USERS sekolah masing-masing.
  *
- * Sengaja tidak memakai getRuntimeUserByEmail_() untuk user sekolah,
- * karena Runtime Auth Directory adalah cache dan dapat tertinggal setelah
- * Admin Sekolah menambah/mengubah user pada sheet USERS.
+ * Web App TIDAK membuka Spreadsheet sekolah secara langsung saat login.
+ * Gateway yang berjalan sebagai owner membaca Spreadsheet sekolah, sehingga
+ * Admin/Guru/Karyawan/Siswa tidak perlu diberi akses langsung ke Spreadsheet.
  */
 function getSessionContext() {
   const email = getCurrentUser_();
 
-  // OWNER aplikasi adalah akun khusus pengelola MASTER.
   if (isAppOwner_(email)) {
     return ok_({
       user: {
@@ -59,55 +56,66 @@ function getSessionContext() {
     }, 'Sesi OWNER aktif.');
   }
 
-  // PENTING:
-  // Untuk user sekolah, baca langsung USERS sekolah masing-masing.
-  // Fungsi ini sudah memiliki aturan:
-  //   1. ADMIN_SEKOLAH hanya dari MASTER_USER.
-  //   2. User selain ADMIN_SEKOLAH dicari pada USERS sekolah.
-  // Dengan demikian MASTER_USER tidak dapat membuat akun GURU runtime.
-  const user = findUserByEmailFromSchoolUsers_(email);
-  if (!user || clean_(user.status).toUpperCase() !== 'ACTIVE') {
-    throw new Error('User belum terdaftar pada sheet USERS sekolah atau status user tidak ACTIVE.');
-  }
-
-  const role = clean_(user.role).toUpperCase();
-  const school = {
-    id_sekolah: clean_(user.id_sekolah).toUpperCase(),
-    npsn: clean_(user.npsn),
-    nama_sekolah: clean_(user.nama_sekolah),
-    spreadsheet_id: clean_(user.spreadsheet_id),
-    drive_folder_id: ''
-  };
-
-  // Drive folder tetap diambil dari konfigurasi sekolah runtime/MASTER.
-  // Identitas user tetap berasal dari USERS sekolah.
+  // PENTING: lookup user dilakukan melalui Gateway.
+  // Jangan panggil findUserByEmailFromSchoolUsers_() di USER_ACCESSING karena
+  // fungsi tersebut membuka Spreadsheet sekolah dengan akun user.
+  let lookup;
   try {
-    const runtimeSchool = getRuntimeSchoolById_(school.id_sekolah);
-    if (runtimeSchool) school.drive_folder_id = clean_(runtimeSchool.drive_folder_id);
+    lookup = gatewayLookupCurrentUser_();
   } catch (e) {
-    // Tidak menggagalkan login hanya karena cache runtime belum tersedia.
+    throw new Error(
+      'Autentikasi sekolah gagal melalui Gateway. ' +
+      (e && e.message ? e.message : String(e))
+    );
   }
 
-  if (!school.spreadsheet_id) {
-    throw new Error('Spreadsheet sekolah user belum dikonfigurasi.');
+  if (!lookup || !lookup.user || !lookup.school) {
+    throw new Error(
+      'Akun ' + email +
+      ' belum terdaftar pada sheet USERS sekolah atau status user tidak ACTIVE.'
+    );
+  }
+
+  const user = lookup.user;
+  const school = lookup.school;
+  const role = clean_(user.role).toUpperCase();
+
+  if (clean_(user.status).toUpperCase() !== 'ACTIVE') {
+    throw new Error('Akun ' + email + ' terdaftar tetapi status user tidak ACTIVE.');
+  }
+
+  if (!school.id_sekolah || !school.spreadsheet_id) {
+    throw new Error('Konfigurasi sekolah user belum lengkap.');
+  }
+
+  // Permission/menu tetap memakai Runtime Auth Directory sebagai cache
+  // konfigurasi MASTER. Yang tidak lagi di-cache adalah identitas user sekolah.
+  let permissions = [];
+  let menus = [];
+  try {
+    permissions = getRuntimePermissions_(role, '');
+    menus = getRuntimeMenusForRole_(role);
+  } catch (e) {
+    // Jika directory belum tersinkron, login tetap dapat mengenali user.
+    // Menu/permission akan kosong sampai directory disinkronkan.
   }
 
   return ok_({
     user: {
       idUser: clean_(user.id_user),
       nama: clean_(user.nama),
-      email: email,
+      email: clean_(user.email || email).toLowerCase(),
       role: role,
-      idSekolah: school.id_sekolah
+      idSekolah: clean_(school.id_sekolah).toUpperCase()
     },
     school: {
-      idSekolah: school.id_sekolah,
-      npsn: school.npsn,
-      namaSekolah: school.nama_sekolah,
-      spreadsheetId: school.spreadsheet_id,
-      driveFolderId: school.drive_folder_id
+      idSekolah: clean_(school.id_sekolah).toUpperCase(),
+      npsn: clean_(school.npsn),
+      namaSekolah: clean_(school.nama_sekolah),
+      spreadsheetId: clean_(school.spreadsheet_id),
+      driveFolderId: clean_(school.drive_folder_id)
     },
-    permissions: getRuntimePermissions_(role, ''),
-    menus: getRuntimeMenusForRole_(role)
-  }, 'Sesi aktif.');
+    permissions: permissions,
+    menus: menus
+  }, 'Sesi aktif melalui Gateway.');
 }
