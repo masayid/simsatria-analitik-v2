@@ -14,7 +14,33 @@ function gatewayAppend_(schoolId, sheetName, row) {
   };
 }
 
-/** Read-only: saat ini sengaja dibatasi GatewayPermission_ hanya untuk KELAS. */
+function gatewayUpdateRow_(schoolId, sheetName, rowNumber, row) {
+  const name = gatewayClean_(sheetName);
+  const rowNo = Number(rowNumber);
+  gatewayRequire_(name, 'Sheet tujuan wajib dikirim.');
+  gatewayRequire_(rowNo >= 2 && isFinite(rowNo), 'Nomor baris tidak valid.');
+  const values = gatewayNormalizeRow_(row);
+  const ss = gatewayGetSpreadsheet_(schoolId);
+  const sh = ss.getSheetByName(name);
+  gatewayRequire_(sh, 'Sheet tujuan tidak ditemukan: ' + name);
+  gatewayRequire_(rowNo <= sh.getLastRow(), 'Baris agenda tidak ditemukan.');
+  sh.getRange(rowNo, 1, 1, values.length).setValues([values]);
+  return { schoolId: gatewayClean_(schoolId).toUpperCase(), sheet: name, row: rowNo };
+}
+
+function gatewayDeleteRow_(schoolId, sheetName, rowNumber) {
+  const name = gatewayClean_(sheetName);
+  const rowNo = Number(rowNumber);
+  gatewayRequire_(name, 'Sheet tujuan wajib dikirim.');
+  gatewayRequire_(rowNo >= 2 && isFinite(rowNo), 'Nomor baris tidak valid.');
+  const ss = gatewayGetSpreadsheet_(schoolId);
+  const sh = ss.getSheetByName(name);
+  gatewayRequire_(sh, 'Sheet tujuan tidak ditemukan: ' + name);
+  gatewayRequire_(rowNo <= sh.getLastRow(), 'Baris agenda tidak ditemukan.');
+  sh.deleteRow(rowNo);
+  return { schoolId: gatewayClean_(schoolId).toUpperCase(), sheet: name, row: rowNo };
+}
+
 function gatewayReadSheet_(schoolId, sheetName) {
   const name = gatewayClean_(sheetName);
   const ss = gatewayGetSpreadsheet_(schoolId);
