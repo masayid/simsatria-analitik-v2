@@ -1,4 +1,57 @@
 /** Operasi spreadsheet melalui Gateway. */
+function gatewayEnsureSheet_(schoolId, sheetName, headers) {
+  const name = gatewayClean_(sheetName).toUpperCase();
+  gatewayRequire_(name === 'KELAS', 'Gateway hanya dapat membuat sheet KELAS.');
+
+  const requestedHeaders = Array.isArray(headers)
+    ? headers.map(gatewayClean_).filter(Boolean)
+    : [];
+  gatewayRequire_(requestedHeaders.length > 0, 'Header sheet wajib dikirim.');
+
+  const ss = gatewayGetSpreadsheet_(schoolId);
+  let sh = ss.getSheetByName(name);
+  const created = !sh;
+
+  if (!sh) {
+    sh = ss.insertSheet(name);
+  }
+
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1, 1, 1, requestedHeaders.length).setValues([requestedHeaders]);
+  } else {
+    const current = sh.getRange(1, 1, 1, Math.max(requestedHeaders.length, sh.getLastColumn()))
+      .getDisplayValues()[0]
+      .slice(0, requestedHeaders.length)
+      .map(gatewayClean_);
+    const same = requestedHeaders.every(function(header, index) {
+      return String(current[index] || '').toUpperCase() === String(header).toUpperCase();
+    });
+    gatewayRequire_(same, 'Struktur sheet KELAS tidak sesuai. Header wajib: ' + requestedHeaders.join(', '));
+  }
+
+  sh.setFrozenRows(1);
+
+  // Setelah sheet dipastikan ada, KELAS otomatis menjadi sheet gateway yang diizinkan.
+  const props = PropertiesService.getScriptProperties();
+  const propName = 'GATEWAY_SHEETS_' + gatewayClean_(schoolId).toUpperCase();
+  const currentAllowed = (props.getProperty(propName) || '')
+    .split(',')
+    .map(gatewayClean_)
+    .filter(Boolean);
+  if (currentAllowed.indexOf(name) < 0) {
+    currentAllowed.push(name);
+    props.setProperty(propName, currentAllowed.join(','));
+  }
+
+  return {
+    schoolId: gatewayClean_(schoolId).toUpperCase(),
+    sheet: name,
+    created: created,
+    headers: requestedHeaders,
+    rows: Math.max(0, sh.getLastRow() - 1)
+  };
+}
+
 function gatewayAppend_(schoolId, sheetName, row) {
   const name = gatewayClean_(sheetName);
   gatewayRequire_(name, 'Sheet tujuan wajib dikirim.');
