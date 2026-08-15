@@ -1,10 +1,16 @@
 /** Allowlist operasi Gateway. */
 function gatewayRequireAction_(action, payload) {
-  const allowed = ['AUTH_LOOKUP_USER', 'SPREADSHEET_APPEND', 'SPREADSHEET_READ', 'DRIVE_UPLOAD', 'PDF_CREATE'];
+  const allowed = [
+    'AUTH_LOOKUP_USER',
+    'SPREADSHEET_APPEND',
+    'SPREADSHEET_UPDATE_ROW',
+    'SPREADSHEET_DELETE_ROW',
+    'SPREADSHEET_READ',
+    'DRIVE_UPLOAD',
+    'PDF_CREATE'
+  ];
   if (allowed.indexOf(action) < 0) throw new Error('Action gateway tidak diizinkan.');
 
-  // Lookup user adalah operasi read-only yang tidak menerima schoolId dari client.
-  // Gateway menentukan sekolah dari MASTER_SEKOLAH lalu membaca USERS sekolah.
   if (action === 'AUTH_LOOKUP_USER') {
     if (!payload || !gatewayClean_(payload.email)) {
       throw new Error('Email user wajib dikirim.');
@@ -15,7 +21,11 @@ function gatewayRequireAction_(action, payload) {
   const schoolId = gatewayClean_(payload && payload.schoolId).toUpperCase();
   if (!schoolId) throw new Error('schoolId wajib dikirim.');
 
-  if (action === 'SPREADSHEET_APPEND') {
+  if (
+    action === 'SPREADSHEET_APPEND' ||
+    action === 'SPREADSHEET_UPDATE_ROW' ||
+    action === 'SPREADSHEET_DELETE_ROW'
+  ) {
     const sheet = gatewayClean_(payload.sheet);
     if (!sheet) throw new Error('Sheet tujuan wajib dikirim.');
 
@@ -29,12 +39,17 @@ function gatewayRequireAction_(action, payload) {
     if (allowedSheets.indexOf(sheet) < 0) {
       throw new Error('Sheet tidak diizinkan untuk gateway: ' + sheet);
     }
+
+    if (action !== 'SPREADSHEET_APPEND') {
+      const rowNo = Number(payload.rowNumber);
+      if (!(rowNo >= 2 && isFinite(rowNo))) throw new Error('Nomor baris tidak valid.');
+    }
   }
 
   if (action === 'SPREADSHEET_READ') {
     const sheet = gatewayClean_(payload.sheet).toUpperCase();
-    if (sheet !== 'KELAS') {
-      throw new Error('Gateway hanya mengizinkan pembacaan sheet KELAS.');
+    if (sheet !== 'KELAS' && sheet !== 'TRX_AGENDA_GURU') {
+      throw new Error('Gateway hanya mengizinkan pembacaan sheet KELAS dan TRX_AGENDA_GURU.');
     }
   }
 
