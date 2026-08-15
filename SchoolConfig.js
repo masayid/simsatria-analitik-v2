@@ -21,46 +21,36 @@ const SCHOOL_CONFIG_HEADERS = [
   'app_version'
 ];
 
-/**
- * Inisialisasi SCHOOL_CONFIG untuk satu sekolah berdasarkan spreadsheet_id
- * yang tersimpan pada MASTER.SEKOLAH.
- */
 function setup30_initializeSchoolConfig() {
   requireSetupAccess_();
 
   const master = getMasterSpreadsheet_();
   const rows = readSheetObjects_(master, MASTER.SEKOLAH);
-  const activeSpreadsheetId = getSchoolSpreadsheetId_();
+  const spreadsheetId = getSchoolSpreadsheetId_();
 
-  if (!activeSpreadsheetId) {
+  if (!spreadsheetId) {
     throw new Error(
       'Spreadsheet sekolah belum dapat ditentukan. ' +
-      'Pastikan SAT_schoolId atau MASTER_SEKOLAH sudah terkonfigurasi.'
+      'Pastikan id_sekolah tersimpan pada Script Properties atau MASTER_SEKOLAH.'
     );
   }
 
   const target = rows.find(function(row) {
-    return clean_(row.spreadsheet_id) === activeSpreadsheetId;
+    return clean_(row.spreadsheet_id) === spreadsheetId;
   });
 
   if (!target) {
     throw new Error(
-      'Spreadsheet sekolah tidak ditemukan di MASTER_SEKOLAH: ' +
-      activeSpreadsheetId
+      'Spreadsheet sekolah tidak ditemukan di MASTER_SEKOLAH: ' + spreadsheetId
     );
   }
 
-  const spreadsheet = SpreadsheetApp.openById(activeSpreadsheetId);
+  const spreadsheet = SpreadsheetApp.openById(spreadsheetId);
   const result = ensureSchoolConfigSheet_(spreadsheet, target);
-
   Logger.log(JSON.stringify(result, null, 2));
   return result;
 }
 
-/**
- * Inisialisasi SCHOOL_CONFIG untuk SEMUA sekolah aktif di MASTER_SEKOLAH.
- * Berguna saat menyiapkan banyak sekolah.
- */
 function setup30_initializeAllSchoolConfigs() {
   requireSetupAccess_();
 
@@ -93,11 +83,6 @@ function setup30_initializeAllSchoolConfigs() {
   return results;
 }
 
-/**
- * Dipakai runtime untuk membaca konfigurasi lokal sekolah.
- * Jika sheet belum ada, runtime TIDAK membuat sheet otomatis karena deployment
- * USER_ACCESSING tidak boleh melakukan provisioning struktur data.
- */
 function getSchoolConfig_() {
   const spreadsheetId = getSchoolSpreadsheetId_();
   if (!spreadsheetId) {
@@ -120,9 +105,9 @@ function getSchoolConfig_() {
   const headers = values[0].map(function(value) {
     return clean_(value);
   });
-
   const row = values[1];
   const result = {};
+
   headers.forEach(function(header, index) {
     if (header) result[header] = row[index];
   });
@@ -140,7 +125,12 @@ function ensureSchoolConfigSheet_(spreadsheet, schoolRow) {
   }
 
   const existingHeaders = sheet.getLastColumn() > 0
-    ? sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), SCHOOL_CONFIG_HEADERS.length)).getValues()[0]
+    ? sheet.getRange(
+        1,
+        1,
+        1,
+        Math.max(sheet.getLastColumn(), SCHOOL_CONFIG_HEADERS.length)
+      ).getValues()[0]
     : [];
 
   const headerMatches = SCHOOL_CONFIG_HEADERS.every(function(header, index) {
@@ -187,30 +177,31 @@ function ensureSchoolConfigSheet_(spreadsheet, schoolRow) {
 
 function getSchoolSpreadsheetId_() {
   const props = PropertiesService.getScriptProperties();
-  const directId = clean_(props.getProperty(APP_CONFIG.PROP.SCHOOL_ID));
+  const schoolId = clean_(props.getProperty(APP_CONFIG.PROP.SCHOOL_ID));
 
-  // Pada aplikasi sekolah, spreadsheet ID dapat disimpan langsung sebagai
-  // SAT_spreadsheetId tanpa mengganggu konfigurasi MASTER yang sudah ada.
+  // Untuk project aplikasi sekolah yang sudah menyimpan ID spreadsheet lokal.
   const localSpreadsheetId = clean_(props.getProperty('SAT_spreadsheetId'));
   if (localSpreadsheetId) return localSpreadsheetId;
 
-  // Jika Script Project terikat pada spreadsheet sekolah, gunakan container.
-  try {
-    const active = SpreadsheetApp.getActiveSpreadsheet();
-    if (active) return active.getId();
-  } catch (e) {}
-
-  // Fallback: cari berdasarkan id_sekolah di MASTER_SEKOLAH.
-  if (directId) {
+  // Prioritas utama: bila ada SAT_schoolId, selalu resolve ke MASTER_SEKOLAH.
+  // Ini mencegah SpreadsheetApp.getActiveSpreadsheet() salah menunjuk ke MASTER.
+  if (schoolId) {
     const master = getMasterSpreadsheet_();
     const rows = readSheetObjects_(master, MASTER.SEKOLAH);
     const target = rows.find(function(row) {
-      return clean_(row.id_sekolah).toUpperCase() === directId.toUpperCase();
+      return clean_(row.id_sekolah).toUpperCase() === schoolId.toUpperCase();
     });
+
     if (target && clean_(target.spreadsheet_id)) {
       return clean_(target.spreadsheet_id);
     }
   }
+
+  // Fallback terakhir untuk project yang benar-benar container-bound ke sekolah.
+  try {
+    const active = SpreadsheetApp.getActiveSpreadsheet();
+    if (active) return active.getId();
+  } catch (e) {}
 
   return '';
 }
