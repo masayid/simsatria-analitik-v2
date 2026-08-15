@@ -123,9 +123,24 @@ function uploadViaGateway(menu, file) {
   return gatewayCall_('DRIVE_UPLOAD', file);
 }
 
+/**
+ * Membuat PDF untuk akun Google user yang sedang login.
+ * Email TIDAK diambil dari frontend; server mengambilnya dari Session aktif.
+ * Gateway kemudian memberikan hak VIEW hanya kepada akun tersebut.
+ */
 function pdfViaGateway(menu, payload) {
   requirePermission_(APP_CONFIG.PERMISSION.PDF, menu);
-  return gatewayCall_('PDF_CREATE', payload);
+
+  const email = clean_(Session.getActiveUser().getEmail()).toLowerCase();
+  if (!email) {
+    throw new Error('Akun Google pengguna tidak teridentifikasi. PDF tidak dapat dikirim ke akun user.');
+  }
+
+  const pdfPayload = Object.assign({}, payload || {}, {
+    recipientEmail: email
+  });
+
+  return gatewayCall_('PDF_CREATE', pdfPayload);
 }
 
 /** Read-only helper yang saat ini dipakai Agenda Guru untuk sheet KELAS. */
