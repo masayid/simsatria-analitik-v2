@@ -9,6 +9,7 @@ function doPost(e) {
     let data;
     if (action === 'AUTH_LOOKUP_USER') data = gatewayLookupUserByEmail_(payload.email);
     else if (action === 'SPREADSHEET_APPEND') data = gatewayAppend_(payload.schoolId, payload.sheet, payload.row);
+    else if (action === 'SPREADSHEET_READ') data = gatewayReadSheet_(payload.schoolId, payload.sheet);
     else if (action === 'DRIVE_UPLOAD') data = gatewayUploadDrive_(payload.schoolId, payload);
     else if (action === 'PDF_CREATE') data = gatewayCreatePdf_(payload.schoolId, payload);
     else throw new Error('Action gateway tidak dikenali.');
