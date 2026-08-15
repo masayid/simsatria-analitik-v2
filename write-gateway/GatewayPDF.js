@@ -5,12 +5,24 @@
  * - Target folder ditentukan HANYA dari schoolId yang sudah dipaksa
  *   oleh gateway-client berdasarkan session user.
  * - folderId dari payload client diabaikan.
- * - PDF dibagikan sebagai Anyone with the link agar hasil cetak dapat
- *   langsung dibuka pada tab baru tanpa dialog Request access.
+ * - PDF TIDAK dibuat public.
+ * - PDF dibagikan hanya kepada recipientEmail user yang sedang login.
+ *
+ * Alur:
+ *   Guru/User klik Cetak -> Web App mengenali akun Google aktif
+ *   -> pdfViaGateway_ mengirim recipientEmail ke Gateway
+ *   -> Gateway membuat PDF di folder sekolah
+ *   -> Gateway memberi hak VIEW hanya ke akun tersebut
+ *   -> URL dikembalikan dan langsung dibuka pada tab baru.
  */
 function gatewayCreatePdf_(schoolId, payload) {
   const effectiveSchoolId = gatewayClean_(schoolId).toUpperCase();
   gatewayRequire_(effectiveSchoolId, 'schoolId PDF wajib tersedia.');
+
+  const recipientEmail = gatewayClean_(payload && payload.recipientEmail).toLowerCase();
+  if (!recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)) {
+    throw new Error('Akun Google penerima PDF tidak valid.');
+  }
 
   const folderId = PropertiesService.getScriptProperties()
     .getProperty('DRIVE_' + effectiveSchoolId);
@@ -24,16 +36,17 @@ function gatewayCreatePdf_(schoolId, payload) {
   const pdf = html.getAs(MimeType.PDF).setName(name + '.pdf');
   const file = DriveApp.getFolderById(folderId).createFile(pdf);
 
-  // Hasil PDF harus dapat dibuka langsung dari tab baru tanpa meminta
-  // pengguna melakukan Request access. Hak akses hanya VIEW.
+  // Jangan gunakan ANYONE_WITH_LINK.
+  // File hanya dibagikan kepada akun Google user yang sedang login.
   try {
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    file.addViewer(recipientEmail);
   } catch (sharingError) {
-    // Jika kebijakan Google Workspace sekolah melarang public link,
-    // jangan diam-diam mengembalikan URL yang pasti meminta akses.
+    try {
+      file.setTrashed(true);
+    } catch (ignore) {}
     throw new Error(
-      'PDF berhasil dibuat, tetapi akses link publik diblokir oleh kebijakan Google Workspace. ' +
-      'Izinkan "Anyone with the link" pada Drive sekolah agar PDF dapat dibuka tanpa Request access.'
+      'PDF berhasil dibuat tetapi tidak dapat dibagikan ke akun Google ' +
+      recipientEmail + '. Pastikan akun tersebut aktif dan dapat menerima file Drive.'
     );
   }
 
@@ -42,6 +55,8 @@ function gatewayCreatePdf_(schoolId, payload) {
     folderId: folderId,
     id: file.getId(),
     name: file.getName(),
-    url: 'https://drive.google.com/file/d/' + file.getId() + '/view?usp=sharing'
+    recipientEmail: recipientEmail,
+    access: 'USER_ONLY_VIEW',
+    url: 'https://drive.google.com/file/d/' + file.getId() + '/view'
   };
 }
