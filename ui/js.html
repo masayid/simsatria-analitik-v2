@@ -1,17 +1,34 @@
 <script>
 let SATRIA_SESSION = null;
+let SATRIA_SESSION_STARTED = false;
+let SATRIA_SESSION_TIMEOUT = null;
 
 function loadSession() {
+  if (SATRIA_SESSION_STARTED) return;
+  SATRIA_SESSION_STARTED = true;
   showLoading(true);
-  google.script.run
-    .withSuccessHandler(renderSession)
-    .withFailureHandler(showSessionError)
-    .getSessionContext();
+
+  SATRIA_SESSION_TIMEOUT = setTimeout(function () {
+    showSessionError({
+      message: 'Waktu memuat sesi habis. Silakan refresh Web App atau deploy ulang versi terbaru.'
+    });
+  }, 30000);
+
+  try {
+    google.script.run
+      .withSuccessHandler(renderSession)
+      .withFailureHandler(showSessionError)
+      .getSessionContext();
+  } catch (error) {
+    showSessionError(error);
+  }
 }
 
 function renderSession(response) {
+  clearSessionTimeout_();
   showLoading(false);
-  if (!response || !response.ok) {
+
+  if (!response || response.ok !== true || !response.data) {
     return showSessionError({
       message: response && response.message
         ? response.message
@@ -19,50 +36,60 @@ function renderSession(response) {
     });
   }
 
-  SATRIA_SESSION = response.data;
-  const user = SATRIA_SESSION.user;
-  const school = SATRIA_SESSION.school;
+  try {
+    SATRIA_SESSION = response.data;
+    const user = SATRIA_SESSION.user || {};
+    const school = SATRIA_SESSION.school || {};
 
-  document.getElementById('welcomeTitle').textContent =
-    'Selamat datang, ' + user.nama;
+    const welcome = document.getElementById('welcomeTitle');
+    const info = document.getElementById('sessionInfo');
+    const schoolInfo = document.getElementById('schoolInfo');
+    const headerUser = document.getElementById('headerUser');
 
-  document.getElementById('sessionInfo').textContent =
-    user.email + ' • ' + user.role;
+    if (welcome) welcome.textContent = 'Selamat datang, ' + (user.nama || 'Pengguna');
+    if (info) info.textContent = (user.email || '') + ' • ' + (user.role || '');
 
-  document.getElementById('schoolInfo').innerHTML =
-    '<strong>' + escapeHtml(school.namaSekolah) + '</strong><br>' +
-    'NPSN: ' + escapeHtml(school.npsn) +
-    ' • ID: ' + escapeHtml(school.idSekolah);
+    if (schoolInfo) {
+      schoolInfo.innerHTML =
+        '<strong>' + escapeHtml(school.namaSekolah || '') + '</strong><br>' +
+        'NPSN: ' + escapeHtml(school.npsn || '') +
+        ' • ID: ' + escapeHtml(school.idSekolah || '');
+    }
 
-  document.getElementById('headerUser').textContent =
-    user.nama + ' • ' + user.role;
+    if (headerUser) headerUser.textContent = (user.nama || '') + ' • ' + (user.role || '');
 
-  renderMenus(SATRIA_SESSION.menus || []);
-  renderPermissions(SATRIA_SESSION.permissions || []);
+    renderMenus(SATRIA_SESSION.menus || []);
+    renderPermissions(SATRIA_SESSION.permissions || []);
+  } catch (error) {
+    showSessionError(error);
+  }
+}
+
+function clearSessionTimeout_() {
+  if (SATRIA_SESSION_TIMEOUT) {
+    clearTimeout(SATRIA_SESSION_TIMEOUT);
+    SATRIA_SESSION_TIMEOUT = null;
+  }
 }
 
 function renderMenus(menus) {
   const box = document.getElementById('dynamicMenus');
   if (!box) return;
-
   box.innerHTML = '';
 
-  menus
+  (Array.isArray(menus) ? menus : [])
     .filter(function (m) {
-      return String(m.kode_menu).toUpperCase() !== 'DASHBOARD';
+      return String(m.kode_menu || '').toUpperCase() !== 'DASHBOARD';
+    })
+    .sort(function (a, b) {
+      return Number(a.urutan || 0) - Number(b.urutan || 0);
     })
     .forEach(function (menu) {
       const btn = document.createElement('button');
       btn.className = 'nav-item';
-      btn.dataset.menu = menu.kode_menu;
-      btn.innerHTML =
-        escapeHtml(menu.icon || '•') +
-        ' <span>' +
-        escapeHtml(menu.nama_menu) +
-        '</span>';
-      btn.onclick = function () {
-        selectMenu(menu.kode_menu);
-      };
+      btn.dataset.menu = menu.kode_menu || '';
+      btn.innerHTML = escapeHtml(menu.icon || '•') + ' <span>' + escapeHtml(menu.nama_menu || menu.kode_menu || '') + '</span>';
+      btn.onclick = function () { selectMenu(menu.kode_menu); };
       box.appendChild(btn);
     });
 }
@@ -79,40 +106,30 @@ function renderPermissions(permissions) {
     ['ADMIN', 'Administrasi']
   ];
 
-  const allowed = new Set(
-    permissions.map(function (p) {
-      return String(p).toUpperCase();
-    })
-  );
+  const allowed = new Set((Array.isArray(permissions) ? permissions : []).map(function (p) {
+    return String(p).toUpperCase();
+  }));
 
   box.innerHTML = labels.map(function (item) {
     const code = item[0];
     const label = item[1];
     const isAllowed = allowed.has(code);
-
-    return '<div class="permission-card ' +
-      (isAllowed ? 'allowed' : 'blocked') +">' +
-      '<b>' + code + '</b>' +
-      '<span>' + label + '</span>' +
-      '<strong>' + (isAllowed ? '✓' : '—') + '</strong>' +
-      '</div>';
+    return '<div class="permission-card ' + (isAllowed ? 'allowed' : 'blocked') + '">' +
+      '<b>' + code + '</b><span>' + label + '</span><strong>' + (isAllowed ? '✓' : '—') + '</strong></div>';
   }).join('');
 }
 
 function selectMenu(menuCode) {
   document.querySelectorAll('.nav-item').forEach(function (el) {
-    el.classList.toggle(
-      'active',
-      el.dataset.menu === menuCode
-    );
+    el.classList.toggle('active', el.dataset.menu === menuCode);
   });
 
-  if (menuCode === 'DASHBOARD') {
-    return loadDashboard();
-  }
+  if (menuCode === 'DASHBOARD') return loadDashboard();
 
-  document.getElementById('content').innerHTML =
-    '<section class="card"><div class="card-body">' +
+  const content = document.getElementById('content');
+  if (!content) return;
+
+  content.innerHTML = '<section class="card"><div class="card-body">' +
     '<div class="eyebrow">MENU</div>' +
     '<h3>' + escapeHtml(menuCode) + '</h3>' +
     '<p>Modul siap dihubungkan pada tahap migrasi menu SIM SATRIA.</p>' +
@@ -124,6 +141,7 @@ function loadDashboard() {
 }
 
 function showSessionError(error) {
+  clearSessionTimeout_();
   showLoading(false);
 
   const message = error && error.message
@@ -132,14 +150,19 @@ function showSessionError(error) {
 
   const title = document.getElementById('welcomeTitle');
   const info = document.getElementById('sessionInfo');
+  const schoolInfo = document.getElementById('schoolInfo');
 
   if (title) title.textContent = 'Akses belum tersedia';
   if (info) info.textContent = message;
+  if (schoolInfo) schoolInfo.innerHTML = '';
 }
 
 function showLoading(show) {
-  const el = document.getElementById('loading');
-  if (el) el.style.display = show ? 'block' : 'none';
+  const el = document.getElementById('spinner') || document.getElementById('loading');
+  if (el) {
+    el.hidden = !show;
+    el.style.display = show ? 'block' : 'none';
+  }
 }
 
 function escapeHtml(value) {
@@ -151,5 +174,13 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-window.addEventListener('load', loadSession);
+function bootSatria_() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadSession, { once: true });
+  } else {
+    loadSession();
+  }
+}
+
+bootSatria_();
 </script>
