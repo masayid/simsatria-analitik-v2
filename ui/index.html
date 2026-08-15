@@ -34,6 +34,14 @@
     <?!= include('ui/modal'); ?>
   </div>
   <?!= include('ui/js'); ?>
+  <script>
+    // ui/js menyimpan session pada global lexical SATRIA_SESSION.
+    // Modul terpisah seperti ui/karyawan membaca window.SATRIA_SESSION.
+    // Bridge ini hanya mengekspos referensi yang sama, tanpa mengubah data session.
+    if (typeof SATRIA_SESSION !== 'undefined') {
+      window.SATRIA_SESSION = SATRIA_SESSION;
+    }
+  </script>
   <?!= include('ui/karyawan'); ?>
   <?!= include('ui/agendaguru'); ?>
 </body>
