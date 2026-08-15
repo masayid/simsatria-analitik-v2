@@ -9,6 +9,11 @@
  * - OWNER: ditangani Web App, bukan USERS.
  * - ADMIN_SEKOLAH: MASTER_USER.
  * - GURU/KARYAWAN/SISWA/WALI_KELAS/dll: USERS sekolah.
+ *
+ * Catatan penting:
+ * gatewayReadObjects_() menormalisasi header menjadi bentuk tanpa underscore
+ * (misalnya "id_sekolah" menjadi "id sekolah"). Karena itu akses field sekolah
+ * WAJIB melalui gatewayFirstValue_(), bukan school.id_sekolah langsung.
  */
 function gatewayLookupUserByEmail_(email) {
   const target = gatewayClean_(email).toLowerCase();
@@ -26,25 +31,25 @@ function gatewayLookupUserByEmail_(email) {
   // ADMIN_SEKOLAH tetap berasal dari MASTER_USER.
   for (let i = 0; i < masterUsers.length; i++) {
     const row = masterUsers[i];
-    const role = gatewayClean_(row.role).toUpperCase();
-    const status = gatewayClean_(row.status).toUpperCase();
-    if (gatewayClean_(row.email).toLowerCase() !== target) continue;
+    const role = gatewayClean_(gatewayFirstValue_(row, ['role', 'kode_role', 'jenis_user'])).toUpperCase();
+    const status = gatewayNormalizeStatus_(gatewayFirstValue_(row, ['status', 'status_user', 'aktif', 'active']));
+    if (gatewayFirstValue_(row, ['email', 'email_user', 'email pengguna', 'akun', 'username']).toLowerCase() !== target) continue;
     if (role !== 'ADMIN_SEKOLAH') continue;
     if (status === 'INACTIVE') return null;
 
-    const schoolId = gatewayClean_(row.id_sekolah).toUpperCase();
+    const schoolId = gatewayFirstValue_(row, ['id_sekolah', 'id sekolah']).toUpperCase();
     const school = gatewayFindSchoolObject_(masterSchools, schoolId);
     if (!school) throw new Error('Sekolah ADMIN_SEKOLAH tidak ditemukan di MASTER_SEKOLAH.');
 
-    return gatewayUserResult_(row, school, 'MASTER_USER', 'ADMIN_SEKOLAH');
+    return gatewayUserResult_(row, school, 'MASTER_USER', 'ADMIN_SEKOLAH', status || 'ACTIVE');
   }
 
   // User biasa selalu dicari langsung pada USERS masing-masing sekolah.
   for (let i = 0; i < masterSchools.length; i++) {
     const school = masterSchools[i];
-    if (gatewayClean_(school.status).toUpperCase() === 'INACTIVE') continue;
+    if (gatewayNormalizeStatus_(gatewayFirstValue_(school, ['status', 'status sekolah', 'aktif', 'active'])) === 'INACTIVE') continue;
 
-    const spreadsheetId = gatewayClean_(school.spreadsheet_id);
+    const spreadsheetId = gatewayFirstValue_(school, ['spreadsheet_id', 'spreadsheet id']);
     if (!spreadsheetId) continue;
 
     let ss;
@@ -97,11 +102,11 @@ function gatewayUserResult_(row, school, source, roleOverride, statusOverride) {
       status: statusOverride || gatewayNormalizeStatus_(gatewayFirstValue_(row, ['status', 'status_user', 'aktif', 'active']))
     },
     school: {
-      id_sekolah: gatewayClean_(school.id_sekolah).toUpperCase(),
-      npsn: gatewayClean_(school.npsn),
-      nama_sekolah: gatewayClean_(school.nama_sekolah),
-      spreadsheet_id: gatewayClean_(school.spreadsheet_id),
-      drive_folder_id: gatewayClean_(school.drive_folder_id)
+      id_sekolah: gatewayFirstValue_(school, ['id_sekolah', 'id sekolah']).toUpperCase(),
+      npsn: gatewayFirstValue_(school, ['npsn']),
+      nama_sekolah: gatewayFirstValue_(school, ['nama_sekolah', 'nama sekolah', 'nama']),
+      spreadsheet_id: gatewayFirstValue_(school, ['spreadsheet_id', 'spreadsheet id']),
+      drive_folder_id: gatewayFirstValue_(school, ['drive_folder_id', 'drive folder id'])
     },
     source: source
   };
@@ -120,8 +125,8 @@ function gatewayReadObjects_(ss, sheetName) {
 function gatewayFindSchoolObject_(schools, schoolId) {
   const target = gatewayClean_(schoolId).toUpperCase();
   return schools.find(function(row) {
-    return gatewayClean_(row.id_sekolah).toUpperCase() === target &&
-      gatewayClean_(row.status).toUpperCase() !== 'INACTIVE';
+    return gatewayFirstValue_(row, ['id_sekolah', 'id sekolah']).toUpperCase() === target &&
+      gatewayNormalizeStatus_(gatewayFirstValue_(row, ['status', 'status sekolah', 'aktif', 'active'])) !== 'INACTIVE';
   }) || null;
 }
 
