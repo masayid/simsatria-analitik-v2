@@ -8,6 +8,7 @@ function doPost(e) {
 
     let data;
     if (action === 'AUTH_LOOKUP_USER') data = gatewayLookupUserByEmail_(payload.email);
+    else if (action === 'SPREADSHEET_ENSURE_SHEET') data = gatewayEnsureSheet_(payload.schoolId, payload.sheet, payload.headers);
     else if (action === 'SPREADSHEET_APPEND') data = gatewayAppend_(payload.schoolId, payload.sheet, payload.row);
     else if (action === 'SPREADSHEET_UPDATE_ROW') data = gatewayUpdateRow_(payload.schoolId, payload.sheet, payload.rowNumber, payload.row);
     else if (action === 'SPREADSHEET_DELETE_ROW') data = gatewayDeleteRow_(payload.schoolId, payload.sheet, payload.rowNumber);
