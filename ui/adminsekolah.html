@@ -7,101 +7,29 @@
     </div>
     <div class="admin-school-badge" id="adminSchoolBadge">ADMIN SEKOLAH</div>
   </div>
-
   <div class="admin-school-stats" id="adminSchoolStats"></div>
-
   <div class="admin-school-toolbar">
-    <div>
-      <strong>Pengguna Sekolah</strong>
-      <small id="adminUsersSource">Sumber: USERS</small>
-    </div>
+    <div><strong>Pengguna Sekolah</strong><small id="adminUsersSource">Sumber: USERS</small></div>
     <div class="admin-school-actions">
       <input id="adminUserSearch" type="search" placeholder="Cari nama, email, ID..." oninput="filterAdminSchoolUsers_()">
       <button class="admin-school-btn secondary" onclick="refreshAdminSekolah()">↻ Refresh</button>
       <button class="admin-school-btn primary" onclick="openAdminUserForm_()">＋ Tambah User</button>
     </div>
   </div>
-
   <div id="adminSchoolNotice" class="admin-school-notice" style="display:none;"></div>
-
-  <div class="admin-school-table-wrap">
-    <table class="admin-school-table">
-      <thead>
-        <tr><th>ID</th><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Aksi</th></tr>
-      </thead>
-      <tbody id="adminSchoolUsersBody"></tbody>
-    </table>
-  </div>
+  <div class="admin-school-table-wrap"><table class="admin-school-table"><thead><tr><th>ID</th><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="adminSchoolUsersBody"></tbody></table></div>
 </section>
 
 <section id="adminKelasPanel" class="admin-school-panel" style="display:none;">
-  <div class="admin-school-hero">
-    <div>
-      <div class="eyebrow">SIM SATRIA • ADMINISTRASI SEKOLAH</div>
-      <h2 id="adminKelasSchoolName">Kelas Sekolah</h2>
-      <p id="adminKelasSchoolMeta">Memuat data KELAS...</p>
-    </div>
-    <div class="admin-school-badge">DATA KELAS</div>
-  </div>
-
-  <div class="admin-kelas-info">
-    <div><strong>KELAS</strong><span>Data kelas tersimpan pada spreadsheet sekolah dan dapat digunakan Agenda Mengajar, Wali Kelas, dan modul sekolah lainnya.</span></div>
-    <div class="admin-kelas-actions">
-      <button class="admin-school-btn secondary" onclick="refreshAdminKelas()">↻ Refresh</button>
-      <button class="admin-school-btn secondary" onclick="downloadKelasTemplate_()">⇩ Download Template</button>
-      <button class="admin-school-btn primary" onclick="openAdminKelasForm_()">＋ Tambah Kelas</button>
-    </div>
-  </div>
-
+  <div class="admin-school-hero"><div><div class="eyebrow">SIM SATRIA • ADMINISTRASI SEKOLAH</div><h2 id="adminKelasSchoolName">Kelas Sekolah</h2><p id="adminKelasSchoolMeta">Memuat data KELAS...</p></div><div class="admin-school-badge">DATA KELAS</div></div>
+  <div class="admin-kelas-info"><div><strong>KELAS</strong><span>Data kelas tersimpan pada spreadsheet sekolah dan dapat digunakan Agenda Mengajar, Wali Kelas, dan modul sekolah lainnya.</span></div><div class="admin-kelas-actions"><button class="admin-school-btn secondary" onclick="refreshAdminKelas()">↻ Refresh</button><button class="admin-school-btn secondary" onclick="downloadKelasTemplate_()">⇩ Download Template</button><button class="admin-school-btn primary" onclick="openAdminKelasForm_()">＋ Tambah Kelas</button></div></div>
   <div id="adminKelasNotice" class="admin-school-notice" style="display:none;"></div>
-
-  <div class="admin-school-table-wrap">
-    <table class="admin-school-table admin-kelas-table">
-      <thead>
-        <tr><th>KELAS</th><th>TINGKAT</th><th>JURUSAN</th><th>WALI_KELAS</th><th>STATUS</th><th>Aksi</th></tr>
-      </thead>
-      <tbody id="adminKelasBody"></tbody>
-    </table>
-  </div>
+  <div class="admin-school-table-wrap"><table class="admin-school-table admin-kelas-table"><thead><tr><th>KELAS</th><th>TINGKAT</th><th>JURUSAN</th><th>WALI_KELAS</th><th>STATUS</th><th>Aksi</th></tr></thead><tbody id="adminKelasBody"></tbody></table></div>
 </section>
 
-<div id="adminUserOverlay" class="admin-user-overlay" style="display:none;">
-  <div class="admin-user-modal">
-    <div class="admin-user-head">
-      <div><div class="eyebrow">USERS SEKOLAH</div><h3 id="adminUserFormTitle">Tambah User</h3></div>
-      <button class="admin-user-close" onclick="closeAdminUserForm_()">×</button>
-    </div>
-    <form onsubmit="submitAdminUserForm_(event)">
-      <div class="admin-user-grid">
-        <label><span>ID User</span><input id="adminUserId" required></label>
-        <label><span>Nama Lengkap</span><input id="adminUserName" required></label>
-        <label class="full"><span>Email Google</span><input id="adminUserEmail" type="email" required></label>
-        <label><span>Role</span><select id="adminUserRole" required><option value="GURU">GURU</option><option value="WALI_KELAS">WALI KELAS</option><option value="KARYAWAN">KARYAWAN</option><option value="SISWA">SISWA</option><option value="ADMIN_SEKOLAH">ADMIN SEKOLAH</option></select></label>
-        <label><span>Status</span><select id="adminUserStatus"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label>
-      </div>
-      <div class="admin-user-foot"><button type="button" class="admin-school-btn secondary" onclick="closeAdminUserForm_()">Batal</button><button id="adminUserSaveBtn" type="submit" class="admin-school-btn primary">Simpan</button></div>
-    </form>
-  </div>
-</div>
+<div id="adminUserOverlay" class="admin-user-overlay" style="display:none;"><div class="admin-user-modal"><div class="admin-user-head"><div><div class="eyebrow">USERS SEKOLAH</div><h3 id="adminUserFormTitle">Tambah User</h3></div><button class="admin-user-close" onclick="closeAdminUserForm_()">×</button></div><form onsubmit="submitAdminUserForm_(event)"><div class="admin-user-grid"><label><span>ID User</span><input id="adminUserId" required></label><label><span>Nama Lengkap</span><input id="adminUserName" required></label><label class="full"><span>Email Google</span><input id="adminUserEmail" type="email" required></label><label><span>Role</span><select id="adminUserRole" required><option value="GURU">GURU</option><option value="WALI_KELAS">WALI KELAS</option><option value="KARYAWAN">KARYAWAN</option><option value="SISWA">SISWA</option><option value="ADMIN_SEKOLAH">ADMIN SEKOLAH</option></select></label><label><span>Status</span><select id="adminUserStatus"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label></div><div class="admin-user-foot"><button type="button" class="admin-school-btn secondary" onclick="closeAdminUserForm_()">Batal</button><button id="adminUserSaveBtn" type="submit" class="admin-school-btn primary">Simpan</button></div></form></div></div>
 
-<div id="adminKelasOverlay" class="admin-user-overlay" style="display:none;">
-  <div class="admin-user-modal admin-kelas-modal">
-    <div class="admin-user-head">
-      <div><div class="eyebrow">KELAS SEKOLAH</div><h3 id="adminKelasFormTitle">Tambah Kelas</h3></div>
-      <button class="admin-user-close" onclick="closeAdminKelasForm_()">×</button>
-    </div>
-    <form onsubmit="submitAdminKelasForm_(event)">
-      <div class="admin-user-grid">
-        <label><span>KELAS</span><input id="adminKelasName" placeholder="Contoh: X-1" required></label>
-        <label><span>TINGKAT</span><select id="adminKelasTingkat" required><option value="X">X</option><option value="XI">XI</option><option value="XII">XII</option></select></label>
-        <label><span>JURUSAN</span><input id="adminKelasJurusan" placeholder="Contoh: IPA / IPS / Umum" required></label>
-        <label><span>WALI_KELAS</span><select id="adminKelasWali"><option value="">Belum ditentukan</option></select></label>
-        <label><span>STATUS</span><select id="adminKelasStatus"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label>
-      </div>
-      <div class="admin-user-foot"><button type="button" class="admin-school-btn secondary" onclick="closeAdminKelasForm_()">Batal</button><button id="adminKelasSaveBtn" type="submit" class="admin-school-btn primary">Simpan Kelas</button></div>
-    </form>
-  </div>
-</div>
+<div id="adminKelasOverlay" class="admin-user-overlay" style="display:none;"><div class="admin-user-modal admin-kelas-modal"><div class="admin-user-head"><div><div class="eyebrow">KELAS SEKOLAH</div><h3 id="adminKelasFormTitle">Tambah Kelas</h3></div><button class="admin-user-close" onclick="closeAdminKelasForm_()">×</button></div><form onsubmit="submitAdminKelasForm_(event)"><div class="admin-user-grid"><label><span>KELAS</span><input id="adminKelasName" placeholder="Contoh: X-1" required></label><label><span>TINGKAT</span><select id="adminKelasTingkat" required><option value="X">X</option><option value="XI">XI</option><option value="XII">XII</option></select></label><label><span>JURUSAN</span><input id="adminKelasJurusan" placeholder="Contoh: IPA / IPS / Umum" required></label><label><span>WALI_KELAS</span><select id="adminKelasWali"><option value="">Belum ditentukan</option></select></label><label><span>STATUS</span><select id="adminKelasStatus"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label></div><div class="admin-user-foot"><button type="button" class="admin-school-btn secondary" onclick="closeAdminKelasForm_()">Batal</button><button id="adminKelasSaveBtn" type="submit" class="admin-school-btn primary">Simpan Kelas</button></div></form></div></div>
 
 <style>
 .admin-school-panel{background:#f4faf7;border-radius:24px;padding:22px;min-height:calc(100vh - 80px)}
@@ -109,213 +37,56 @@
 .admin-school-stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}.admin-stat{background:#fff;border:1px solid #dfebe5;border-radius:15px;padding:14px}.admin-stat small{display:block;color:#71847b;font-size:11px;font-weight:700}.admin-stat strong{display:block;color:#0b3d2e;font-size:22px;margin-top:3px}
 .admin-school-toolbar{background:#fff;border:1px solid #dfebe5;border-radius:15px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.admin-school-toolbar small{display:block;color:#7a8b83;font-size:11px;margin-top:2px}.admin-school-actions{display:flex;gap:7px;align-items:center}.admin-school-actions input{width:230px;border:1px solid #d4e2db;border-radius:9px;padding:9px 11px}.admin-school-btn{border:0;border-radius:9px;padding:9px 13px;cursor:pointer;font-weight:750}.admin-school-btn.primary{background:#0b3d2e;color:#fff}.admin-school-btn.secondary{background:#eaf3ee;color:#244b3d}
 .admin-school-notice{border-radius:10px;padding:10px 12px;margin:10px 0;font-size:13px;background:#edf7f1;color:#28543f}.admin-school-table-wrap{background:#fff;border:1px solid #dfebe5;border-radius:15px;overflow:auto}.admin-school-table{width:100%;border-collapse:collapse;font-size:13px}.admin-school-table th{background:#eff7f2;color:#355247;padding:11px;text-align:left;white-space:nowrap}.admin-school-table td{padding:10px 11px;border-top:1px solid #edf2ef;vertical-align:middle}.admin-user-role{display:inline-block;border-radius:999px;padding:4px 8px;background:#edf4f0;font-size:10px;font-weight:800}.admin-user-status.active{color:#23744b;font-weight:800}.admin-user-status.inactive{color:#9a4c4c;font-weight:800}.admin-row-btn{border:0;border-radius:7px;padding:6px 8px;background:#edf4f0;cursor:pointer;margin-right:4px}.admin-row-btn.danger{background:#fff0f0;color:#9b4242}
-.admin-kelas-info{background:#fff;border:1px solid #dfebe5;border-radius:15px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:10px}.admin-kelas-info strong{display:block;color:#0b3d2e;font-size:16px}.admin-kelas-info span{display:block;color:#71847b;font-size:12px;margin-top:3px}.admin-kelas-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.admin-kelas-table th:last-child,.admin-kelas-table td:last-child{white-space:nowrap}.admin-kelas-modal{width:min(720px,100%)}
-.admin-user-overlay{position:fixed;inset:0;background:rgba(5,30,20,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px}.admin-user-modal{width:min(650px,100%);background:#fff;border-radius:19px;box-shadow:0 20px 60px rgba(0,0,0,.22);overflow:hidden}.admin-user-head{display:flex;justify-content:space-between;align-items:center;padding:19px 21px;border-bottom:1px solid #e6eee9}.admin-user-head h3{margin:3px 0 0}.admin-user-close{border:0;border-radius:50%;width:34px;height:34px;background:#eef4f1;font-size:22px;cursor:pointer}.admin-user-grid{padding:20px 21px;display:grid;grid-template-columns:1fr 1fr;gap:13px}.admin-user-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:750;color:#4b6258}.admin-user-grid label.full{grid-column:1/-1}.admin-user-grid input,.admin-user-grid select{border:1px solid #d4e1da;border-radius:9px;padding:10px;background:#fff;font-size:14px}.admin-user-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 21px;border-top:1px solid #e6eee9}@media(max-width:850px){.admin-school-stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.admin-school-panel{padding:12px}.admin-school-hero{padding:17px;flex-direction:column}.admin-school-hero h2{font-size:21px}.admin-school-toolbar{align-items:stretch;flex-direction:column}.admin-school-actions{flex-wrap:wrap}.admin-school-actions input{width:100%;flex:1}.admin-school-stats{grid-template-columns:repeat(2,1fr)}.admin-user-grid{grid-template-columns:1fr}.admin-user-grid label.full{grid-column:auto}.admin-kelas-info{align-items:stretch;flex-direction:column}.admin-kelas-actions{justify-content:flex-start}.admin-kelas-actions .admin-school-btn{flex:1}.admin-kelas-modal{width:100%}}
+.admin-kelas-info,.admin-siswa-info{background:#fff;border:1px solid #dfebe5;border-radius:15px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:10px}.admin-kelas-info strong,.admin-siswa-info strong{display:block;color:#0b3d2e;font-size:16px}.admin-kelas-info span,.admin-siswa-info span{display:block;color:#71847b;font-size:12px;margin-top:3px}.admin-kelas-actions,.admin-siswa-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}.admin-kelas-table th:last-child,.admin-kelas-table td:last-child,.admin-siswa-table th:last-child,.admin-siswa-table td:last-child{white-space:nowrap}.admin-kelas-modal,.admin-siswa-modal{width:min(720px,100%)}
+.admin-user-overlay{position:fixed;inset:0;background:rgba(5,30,20,.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px}.admin-user-modal{width:min(650px,100%);background:#fff;border-radius:19px;box-shadow:0 20px 60px rgba(0,0,0,.22);overflow:hidden}.admin-user-head{display:flex;justify-content:space-between;align-items:center;padding:19px 21px;border-bottom:1px solid #e6eee9}.admin-user-head h3{margin:3px 0 0}.admin-user-close{border:0;border-radius:50%;width:34px;height:34px;background:#eef4f1;font-size:22px;cursor:pointer}.admin-user-grid{padding:20px 21px;display:grid;grid-template-columns:1fr 1fr;gap:13px}.admin-user-grid label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:750;color:#4b6258}.admin-user-grid label.full{grid-column:1/-1}.admin-user-grid input,.admin-user-grid select{border:1px solid #d4e1da;border-radius:9px;padding:10px;background:#fff;font-size:14px}.admin-user-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 21px;border-top:1px solid #e6eee9}
+.admin-siswa-toolbar{background:#fff;border:1px solid #dfebe5;border-radius:15px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}.admin-siswa-toolbar input{width:280px;border:1px solid #d4e2db;border-radius:9px;padding:9px 11px}.admin-siswa-pagination{display:flex;justify-content:center;align-items:center;gap:12px;padding:14px 4px}.admin-siswa-pagination span{color:#587067;font-size:13px}.admin-siswa-pagination button:disabled{opacity:.45}
+@media(max-width:850px){.admin-school-stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:650px){.admin-school-panel{padding:12px}.admin-school-hero{padding:17px;flex-direction:column}.admin-school-hero h2{font-size:21px}.admin-school-toolbar,.admin-siswa-toolbar{align-items:stretch;flex-direction:column}.admin-school-actions{flex-wrap:wrap}.admin-school-actions input,.admin-siswa-toolbar input{width:100%;flex:1}.admin-school-stats{grid-template-columns:repeat(2,1fr)}.admin-user-grid{grid-template-columns:1fr}.admin-user-grid label.full{grid-column:auto}.admin-kelas-info,.admin-siswa-info{align-items:stretch;flex-direction:column}.admin-kelas-actions,.admin-siswa-actions{justify-content:flex-start}.admin-kelas-actions .admin-school-btn,.admin-siswa-actions .admin-school-btn{flex:1}.admin-kelas-modal,.admin-siswa-modal{width:100%}}
 </style>
 
 <script>
 let ADMIN_SEKOLAH_STATE={data:null,editingRow:null};
 let ADMIN_KELAS_STATE={rows:[],editingRow:null};
-
-function loadAdminSekolah(){
-  const panel=document.getElementById('adminSekolahPanel');
-  if(!panel)return;
-  panel.style.display='block';
-  const kelas=document.getElementById('adminKelasPanel');if(kelas)kelas.style.display='none';
-  hideOtherAdminPanels_();
-  const body=document.getElementById('adminSchoolUsersBody');
-  if(body)body.innerHTML='<tr><td colspan="6" style="padding:25px;text-align:center">Memuat data USERS...</td></tr>';
-  google.script.run.withSuccessHandler(function(res){
-    if(!res||!res.ok){return showAdminSchoolNotice_(res&&res.message||'Gagal memuat panel ADMIN_SEKOLAH.','error');}
-    ADMIN_SEKOLAH_STATE.data=res.data;
-    renderAdminSekolah_();
-  }).withFailureHandler(function(err){showAdminSchoolNotice_(err.message,'error');}).getAdminSekolahContext();
-}
-
+function loadAdminSekolah(){const panel=document.getElementById('adminSekolahPanel');if(!panel)return;panel.style.display='block';const kelas=document.getElementById('adminKelasPanel');if(kelas)kelas.style.display='none';const siswa=document.getElementById('adminSiswaPanel');if(siswa)siswa.style.display='none';hideOtherAdminPanels_();const body=document.getElementById('adminSchoolUsersBody');if(body)body.innerHTML='<tr><td colspan="6" style="padding:25px;text-align:center">Memuat data USERS...</td></tr>';google.script.run.withSuccessHandler(function(res){if(!res||!res.ok)return showAdminSchoolNotice_(res&&res.message||'Gagal memuat panel ADMIN_SEKOLAH.','error');ADMIN_SEKOLAH_STATE.data=res.data;renderAdminSekolah_();}).withFailureHandler(function(err){showAdminSchoolNotice_(err.message,'error');}).getAdminSekolahContext();}
 function refreshAdminSekolah(){loadAdminSekolah();}
-
-function renderAdminSekolah_(){
-  const d=ADMIN_SEKOLAH_STATE.data||{};
-  const school=d.school||{}, counts=d.counts||{};
-  const name=document.getElementById('adminSchoolName'),meta=document.getElementById('adminSchoolMeta');
-  if(name)name.textContent=school.nama_sekolah||'Administrasi Sekolah';
-  if(meta)meta.textContent='NPSN: '+(school.npsn||'-')+' • ID: '+(school.id_sekolah||'-')+' • Spreadsheet: '+(school.spreadsheet_id||'-');
-  const stats=[['TOTAL',Array.isArray(d.users)?d.users.length:0],['GURU',counts.GURU||0],['WALI KELAS',counts.WALI_KELAS||0],['KARYAWAN',counts.KARYAWAN||0],['SISWA',counts.SISWA||0]];
-  const box=document.getElementById('adminSchoolStats');if(box)box.innerHTML=stats.map(function(x){return '<div class="admin-stat"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>';}).join('');
-  const src=document.getElementById('adminUsersSource');if(src)src.textContent='Sumber: '+((d.usersSheet&&d.usersSheet.name)||'USERS')+' • '+(d.usersSheet&&d.usersSheet.created?'sheet baru dibuat':'sheet tersedia');
-  renderAdminSchoolUsers_();
-}
-
-function renderAdminSchoolUsers_(){
-  const body=document.getElementById('adminSchoolUsersBody');const users=(ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.users)||[];if(!body)return;
-  body.innerHTML=users.map(function(u){
-    const self=ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.admin&&String(u.email).toLowerCase()===String(ADMIN_SEKOLAH_STATE.data.admin.email).toLowerCase();
-    return '<tr data-admin-user-search="'+escapeHtml_([u.id_user,u.nama,u.email,u.role,u.status].join(' '))+'">'+
-      '<td>'+escapeHtml_(u.id_user)+'</td><td>'+escapeHtml_(u.nama)+'</td><td>'+escapeHtml_(u.email)+'</td>'+
-      '<td><span class="admin-user-role">'+escapeHtml_(u.role)+'</span></td>'+
-      '<td class="admin-user-status '+(String(u.status).toUpperCase()==='ACTIVE'?'active':'inactive')+'">'+escapeHtml_(u.status)+'</td>'+
-      '<td><button class="admin-row-btn" onclick="openAdminUserForm_('+Number(u._row)+')">Edit</button>'+(self?'':'<button class="admin-row-btn danger" onclick="deleteAdminSchoolUser_('+Number(u._row)+')">Hapus</button>')+'</td></tr>';
-  }).join('')||'<tr><td colspan="6" style="padding:25px;text-align:center;color:#71847b">Belum ada user.</td></tr>';
-}
-
+function renderAdminSekolah_(){const d=ADMIN_SEKOLAH_STATE.data||{},school=d.school||{},counts=d.counts||{};const name=document.getElementById('adminSchoolName'),meta=document.getElementById('adminSchoolMeta');if(name)name.textContent=school.nama_sekolah||'Administrasi Sekolah';if(meta)meta.textContent='NPSN: '+(school.npsn||'-')+' • ID: '+(school.id_sekolah||'-')+' • Spreadsheet: '+(school.spreadsheet_id||'-');const stats=[['TOTAL',Array.isArray(d.users)?d.users.length:0],['GURU',counts.GURU||0],['WALI KELAS',counts.WALI_KELAS||0],['KARYAWAN',counts.KARYAWAN||0],['SISWA',counts.SISWA||0]];const box=document.getElementById('adminSchoolStats');if(box)box.innerHTML=stats.map(function(x){return '<div class="admin-stat"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>';}).join('');const src=document.getElementById('adminUsersSource');if(src)src.textContent='Sumber: '+((d.usersSheet&&d.usersSheet.name)||'USERS')+' • '+(d.usersSheet&&d.usersSheet.created?'sheet baru dibuat':'sheet tersedia');renderAdminSchoolUsers_();}
+function renderAdminSchoolUsers_(){const body=document.getElementById('adminSchoolUsersBody'),users=(ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.users)||[];if(!body)return;body.innerHTML=users.map(function(u){const self=ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.admin&&String(u.email).toLowerCase()===String(ADMIN_SEKOLAH_STATE.data.admin.email).toLowerCase();return '<tr data-admin-user-search="'+escapeHtml_([u.id_user,u.nama,u.email,u.role,u.status].join(' '))+'"><td>'+escapeHtml_(u.id_user)+'</td><td>'+escapeHtml_(u.nama)+'</td><td>'+escapeHtml_(u.email)+'</td><td><span class="admin-user-role">'+escapeHtml_(u.role)+'</span></td><td class="admin-user-status '+(String(u.status).toUpperCase()==='ACTIVE'?'active':'inactive')+'">'+escapeHtml_(u.status)+'</td><td><button class="admin-row-btn" onclick="openAdminUserForm_('+Number(u._row)+')">Edit</button>'+(self?'':'<button class="admin-row-btn danger" onclick="deleteAdminSchoolUser_('+Number(u._row)+')">Hapus</button>')+'</td></tr>';}).join('')||'<tr><td colspan="6" style="padding:25px;text-align:center;color:#71847b">Belum ada user.</td></tr>';}
 function filterAdminSchoolUsers_(){const q=(document.getElementById('adminUserSearch')||{}).value||'';document.querySelectorAll('#adminSchoolUsersBody tr[data-admin-user-search]').forEach(function(tr){tr.style.display=tr.dataset.adminUserSearch.toLowerCase().indexOf(q.toLowerCase())>=0?'':'none';});}
-
-function openAdminUserForm_(rowNumber){
-  ADMIN_SEKOLAH_STATE.editingRow=rowNumber||null;
-  const users=(ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.users)||[];
-  const row=rowNumber?users.find(function(x){return Number(x._row)===Number(rowNumber);}):{};
-  document.getElementById('adminUserFormTitle').textContent=rowNumber?'Edit User':'Tambah User';
-  document.getElementById('adminUserId').value=row.id_user||'';
-  document.getElementById('adminUserName').value=row.nama||'';
-  document.getElementById('adminUserEmail').value=row.email||'';
-  document.getElementById('adminUserRole').value=row.role||'GURU';
-  document.getElementById('adminUserStatus').value=row.status||'ACTIVE';
-  document.getElementById('adminUserOverlay').style.display='flex';
-}
+function openAdminUserForm_(rowNumber){ADMIN_SEKOLAH_STATE.editingRow=rowNumber||null;const users=(ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.users)||[],row=rowNumber?users.find(function(x){return Number(x._row)===Number(rowNumber);}):{};document.getElementById('adminUserFormTitle').textContent=rowNumber?'Edit User':'Tambah User';document.getElementById('adminUserId').value=row.id_user||'';document.getElementById('adminUserName').value=row.nama||'';document.getElementById('adminUserEmail').value=row.email||'';document.getElementById('adminUserRole').value=row.role||'GURU';document.getElementById('adminUserStatus').value=row.status||'ACTIVE';document.getElementById('adminUserOverlay').style.display='flex';}
 function closeAdminUserForm_(){document.getElementById('adminUserOverlay').style.display='none';}
-
-function submitAdminUserForm_(e){
-  e.preventDefault();
-  const btn=document.getElementById('adminUserSaveBtn');btn.disabled=true;btn.textContent='Menyimpan...';
-  const payload={_row:ADMIN_SEKOLAH_STATE.editingRow||0,id_user:document.getElementById('adminUserId').value.trim(),nama:document.getElementById('adminUserName').value.trim(),email:document.getElementById('adminUserEmail').value.trim(),role:document.getElementById('adminUserRole').value,status:document.getElementById('adminUserStatus').value};
-  google.script.run.withSuccessHandler(function(res){btn.disabled=false;btn.textContent='Simpan';if(!res||!res.ok)return showAdminSchoolNotice_(res&&res.message||'Gagal menyimpan user.','error');closeAdminUserForm_();ADMIN_SEKOLAH_STATE.data.users=res.data.users||[];rebuildAdminCounts_();renderAdminSekolah_();showAdminSchoolNotice_('User berhasil disimpan.','success');}).withFailureHandler(function(err){btn.disabled=false;btn.textContent='Simpan';showAdminSchoolNotice_(err.message,'error');}).saveAdminSchoolUser(payload);
-}
-
-function deleteAdminSchoolUser_(rowNumber){
-  if(!confirm('Hapus user ini dari USERS sekolah?'))return;
-  google.script.run.withSuccessHandler(function(res){if(!res||!res.ok)return showAdminSchoolNotice_(res&&res.message||'Gagal menghapus user.','error');ADMIN_SEKOLAH_STATE.data.users=res.data||[];rebuildAdminCounts_();renderAdminSekolah_();showAdminSchoolNotice_('User berhasil dihapus.','success');}).withFailureHandler(function(err){showAdminSchoolNotice_(err.message,'error');}).deleteAdminSchoolUser(rowNumber);
-}
+function submitAdminUserForm_(e){e.preventDefault();const btn=document.getElementById('adminUserSaveBtn');btn.disabled=true;btn.textContent='Menyimpan...';const payload={_row:ADMIN_SEKOLAH_STATE.editingRow||0,id_user:document.getElementById('adminUserId').value.trim(),nama:document.getElementById('adminUserName').value.trim(),email:document.getElementById('adminUserEmail').value.trim(),role:document.getElementById('adminUserRole').value,status:document.getElementById('adminUserStatus').value};google.script.run.withSuccessHandler(function(res){btn.disabled=false;btn.textContent='Simpan';if(!res||!res.ok)return showAdminSchoolNotice_(res&&res.message||'Gagal menyimpan user.','error');closeAdminUserForm_();ADMIN_SEKOLAH_STATE.data.users=res.data.users||[];rebuildAdminCounts_();renderAdminSekolah_();showAdminSchoolNotice_('User berhasil disimpan.','success');}).withFailureHandler(function(err){btn.disabled=false;btn.textContent='Simpan';showAdminSchoolNotice_(err.message,'error');}).saveAdminSchoolUser(payload);}
+function deleteAdminSchoolUser_(rowNumber){if(!confirm('Hapus user ini dari USERS sekolah?'))return;google.script.run.withSuccessHandler(function(res){if(!res||!res.ok)return showAdminSchoolNotice_(res&&res.message||'Gagal menghapus user.','error');ADMIN_SEKOLAH_STATE.data.users=res.data||[];rebuildAdminCounts_();renderAdminSekolah_();showAdminSchoolNotice_('User berhasil dihapus.','success');}).withFailureHandler(function(err){showAdminSchoolNotice_(err.message,'error');}).deleteAdminSchoolUser(rowNumber);}
 function rebuildAdminCounts_(){const c={};(ADMIN_SEKOLAH_STATE.data.users||[]).forEach(function(u){const r=String(u.role||'LAINNYA').toUpperCase();c[r]=(c[r]||0)+1;});ADMIN_SEKOLAH_STATE.data.counts=c;}
-
-/* ================================================================
- * ADMIN SEKOLAH — KELAS UI
- * ================================================================ */
-function loadAdminKelas(){
-  const panel=document.getElementById('adminKelasPanel');
-  if(!panel)return;
-  const usersPanel=document.getElementById('adminSekolahPanel');if(usersPanel)usersPanel.style.display='none';
-  panel.style.display='block';
-  hideOtherAdminPanels_();
-
-  const school=ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.school||{};
-  const name=document.getElementById('adminKelasSchoolName'),meta=document.getElementById('adminKelasSchoolMeta');
-  if(name)name.textContent=school.nama_sekolah||'Kelas Sekolah';
-  if(meta)meta.textContent='NPSN: '+(school.npsn||'-')+' • ID: '+(school.id_sekolah||'-')+' • Sheet: KELAS';
-
-  const body=document.getElementById('adminKelasBody');
-  if(body)body.innerHTML='<tr><td colspan="6" style="padding:25px;text-align:center">Memuat data KELAS...</td></tr>';
-
-  function loadClasses_(){
-    google.script.run.withSuccessHandler(function(res){
-      if(!res||!res.ok)return showAdminKelasNotice_(res&&res.message||'Gagal memuat KELAS.','error');
-      ADMIN_KELAS_STATE.rows=(res.data&&res.data.rows)||[];
-      renderAdminKelas_();
-    }).withFailureHandler(function(err){showAdminKelasNotice_(err.message,'error');}).getAdminSchoolKelas();
-  }
-
-  if(!ADMIN_SEKOLAH_STATE.data){
-    google.script.run.withSuccessHandler(function(res){
-      if(res&&res.ok){ADMIN_SEKOLAH_STATE.data=res.data;loadClasses_();}
-      else showAdminKelasNotice_(res&&res.message||'Gagal memuat data sekolah.','error');
-    }).withFailureHandler(function(err){showAdminKelasNotice_(err.message,'error');}).getAdminSekolahContext();
-  }else{
-    loadClasses_();
-  }
-}
-
+function loadAdminKelas(){const panel=document.getElementById('adminKelasPanel');if(!panel)return;const usersPanel=document.getElementById('adminSekolahPanel');if(usersPanel)usersPanel.style.display='none';const siswa=document.getElementById('adminSiswaPanel');if(siswa)siswa.style.display='none';panel.style.display='block';hideOtherAdminPanels_();const school=ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.school||{},name=document.getElementById('adminKelasSchoolName'),meta=document.getElementById('adminKelasSchoolMeta');if(name)name.textContent=school.nama_sekolah||'Kelas Sekolah';if(meta)meta.textContent='NPSN: '+(school.npsn||'-')+' • ID: '+(school.id_sekolah||'-')+' • Sheet: KELAS';const body=document.getElementById('adminKelasBody');if(body)body.innerHTML='<tr><td colspan="6" style="padding:25px;text-align:center">Memuat data KELAS...</td></tr>';function loadClasses_(){google.script.run.withSuccessHandler(function(res){if(!res||!res.ok)return showAdminKelasNotice_(res&&res.message||'Gagal memuat KELAS.','error');ADMIN_KELAS_STATE.rows=(res.data&&res.data.rows)||[];renderAdminKelas_();}).withFailureHandler(function(err){showAdminKelasNotice_(err.message,'error');}).getAdminSchoolKelas();}if(!ADMIN_SEKOLAH_STATE.data){google.script.run.withSuccessHandler(function(res){if(res&&res.ok){ADMIN_SEKOLAH_STATE.data=res.data;loadClasses_();}else showAdminKelasNotice_(res&&res.message||'Gagal memuat data sekolah.','error');}).withFailureHandler(function(err){showAdminKelasNotice_(err.message,'error');}).getAdminSekolahContext();}else loadClasses_();}
 function refreshAdminKelas(){loadAdminKelas();}
-
-function renderAdminKelas_(){
-  const body=document.getElementById('adminKelasBody');if(!body)return;
-  const rows=ADMIN_KELAS_STATE.rows||[];
-  body.innerHTML=rows.map(function(r){
-    const active=String(r.STATUS||'').toUpperCase()==='ACTIVE';
-    return '<tr>'+
-      '<td><strong>'+escapeHtml_(r.KELAS)+'</strong></td>'+
-      '<td>'+escapeHtml_(r.TINGKAT)+'</td>'+
-      '<td>'+escapeHtml_(r.JURUSAN)+'</td>'+
-      '<td>'+escapeHtml_(r.WALI_KELAS||'—')+'</td>'+
-      '<td class="admin-user-status '+(active?'active':'inactive')+'">'+escapeHtml_(r.STATUS||'')+'</td>'+
-      '<td><button class="admin-row-btn" onclick="openAdminKelasForm_('+Number(r._row)+')">Edit</button><button class="admin-row-btn danger" onclick="deleteAdminKelas_('+Number(r._row)+')">Hapus</button></td>'+
-      '</tr>';
-  }).join('')||'<tr><td colspan="6" style="padding:25px;text-align:center;color:#71847b">Belum ada kelas. Gunakan Tambah Kelas atau upload berdasarkan template.</td></tr>';
-}
-
-function populateAdminKelasWali_(selected){
-  const select=document.getElementById('adminKelasWali');if(!select)return;
-  const users=(ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.users)||[];
-  const candidates=users.filter(function(u){
-    const role=String(u.role||'').toUpperCase(),status=String(u.status||'').toUpperCase();
-    return status==='ACTIVE'&&(role==='WALI_KELAS'||role==='GURU');
-  });
-  const seen={};
-  const options=['<option value="">Belum ditentukan</option>'];
-  candidates.forEach(function(u){
-    const value=String(u.nama||'').trim();if(!value||seen[value.toUpperCase()])return;seen[value.toUpperCase()]=true;
-    options.push('<option value="'+escapeHtml_(value)+'">'+escapeHtml_(value)+(String(u.role||'').toUpperCase()==='WALI_KELAS'?' • WALI KELAS':'')+'</option>');
-  });
-  if(selected&&!seen[String(selected).toUpperCase()])options.push('<option value="'+escapeHtml_(selected)+'">'+escapeHtml_(selected)+'</option>');
-  select.innerHTML=options.join('');select.value=selected||'';
-}
-
-function openAdminKelasForm_(rowNumber){
-  ADMIN_KELAS_STATE.editingRow=rowNumber||null;
-  const row=rowNumber?(ADMIN_KELAS_STATE.rows||[]).find(function(x){return Number(x._row)===Number(rowNumber);}):{};
-  document.getElementById('adminKelasFormTitle').textContent=rowNumber?'Edit Kelas':'Tambah Kelas';
-  document.getElementById('adminKelasName').value=row.KELAS||'';
-  document.getElementById('adminKelasTingkat').value=row.TINGKAT||'X';
-  document.getElementById('adminKelasJurusan').value=row.JURUSAN||'';
-  document.getElementById('adminKelasStatus').value=row.STATUS||'ACTIVE';
-  populateAdminKelasWali_(row.WALI_KELAS||'');
-  document.getElementById('adminKelasOverlay').style.display='flex';
-}
-
+function renderAdminKelas_(){const body=document.getElementById('adminKelasBody');if(!body)return;const rows=ADMIN_KELAS_STATE.rows||[];body.innerHTML=rows.map(function(r){const active=String(r.STATUS||'').toUpperCase()==='ACTIVE';return '<tr><td><strong>'+escapeHtml_(r.KELAS)+'</strong></td><td>'+escapeHtml_(r.TINGKAT)+'</td><td>'+escapeHtml_(r.JURUSAN)+'</td><td>'+escapeHtml_(r.WALI_KELAS||'—')+'</td><td class="admin-user-status '+(active?'active':'inactive')+'">'+escapeHtml_(r.STATUS||'')+'</td><td><button class="admin-row-btn" onclick="openAdminKelasForm_('+Number(r._row)+')">Edit</button><button class="admin-row-btn danger" onclick="deleteAdminKelas_('+Number(r._row)+')">Hapus</button></td></tr>';}).join('')||'<tr><td colspan="6" style="padding:25px;text-align:center;color:#71847b">Belum ada kelas. Gunakan Tambah Kelas atau upload berdasarkan template.</td></tr>';}
+function populateAdminKelasWali_(selected){const select=document.getElementById('adminKelasWali');if(!select)return;const users=(ADMIN_SEKOLAH_STATE.data&&ADMIN_SEKOLAH_STATE.data.users)||[],candidates=users.filter(function(u){const role=String(u.role||'').toUpperCase(),status=String(u.status||'').toUpperCase();return status==='ACTIVE'&&(role==='WALI_KELAS'||role==='GURU');}),seen={},options=['<option value="">Belum ditentukan</option>'];candidates.forEach(function(u){const value=String(u.nama||'').trim();if(!value||seen[value.toUpperCase()])return;seen[value.toUpperCase()]=true;options.push('<option value="'+escapeHtml_(value)+'">'+escapeHtml_(value)+(String(u.role||'').toUpperCase()==='WALI_KELAS'?' • WALI KELAS':'')+'</option>');});if(selected&&!seen[String(selected).toUpperCase()])options.push('<option value="'+escapeHtml_(selected)+'">'+escapeHtml_(selected)+'</option>');select.innerHTML=options.join('');select.value=selected||'';}
+function openAdminKelasForm_(rowNumber){ADMIN_KELAS_STATE.editingRow=rowNumber||null;const row=rowNumber?(ADMIN_KELAS_STATE.rows||[]).find(function(x){return Number(x._row)===Number(rowNumber);}):{};document.getElementById('adminKelasFormTitle').textContent=rowNumber?'Edit Kelas':'Tambah Kelas';document.getElementById('adminKelasName').value=row.KELAS||'';document.getElementById('adminKelasTingkat').value=row.TINGKAT||'X';document.getElementById('adminKelasJurusan').value=row.JURUSAN||'';document.getElementById('adminKelasStatus').value=row.STATUS||'ACTIVE';populateAdminKelasWali_(row.WALI_KELAS||'');document.getElementById('adminKelasOverlay').style.display='flex';}
 function closeAdminKelasForm_(){document.getElementById('adminKelasOverlay').style.display='none';ADMIN_KELAS_STATE.editingRow=null;}
-
-function submitAdminKelasForm_(e){
-  e.preventDefault();
-  const btn=document.getElementById('adminKelasSaveBtn');btn.disabled=true;btn.textContent='Menyimpan...';
-  const payload={
-    _row:ADMIN_KELAS_STATE.editingRow||0,
-    KELAS:document.getElementById('adminKelasName').value.trim(),
-    TINGKAT:document.getElementById('adminKelasTingkat').value,
-    JURUSAN:document.getElementById('adminKelasJurusan').value.trim(),
-    WALI_KELAS:document.getElementById('adminKelasWali').value,
-    STATUS:document.getElementById('adminKelasStatus').value
-  };
-  google.script.run.withSuccessHandler(function(res){
-    btn.disabled=false;btn.textContent='Simpan Kelas';
-    if(!res||!res.ok)return showAdminKelasNotice_(res&&res.message||'Gagal menyimpan KELAS.','error');
-    ADMIN_KELAS_STATE.rows=(res.data&&res.data.rows)||[];
-    closeAdminKelasForm_();renderAdminKelas_();showAdminKelasNotice_('Data KELAS berhasil disimpan.','success');
-  }).withFailureHandler(function(err){btn.disabled=false;btn.textContent='Simpan Kelas';showAdminKelasNotice_(err.message,'error');}).saveAdminSchoolKelas(payload);
-}
-
-function deleteAdminKelas_(rowNumber){
-  if(!confirm('Hapus data kelas ini?'))return;
-  google.script.run.withSuccessHandler(function(res){
-    if(!res||!res.ok)return showAdminKelasNotice_(res&&res.message||'Gagal menghapus KELAS.','error');
-    ADMIN_KELAS_STATE.rows=(res.data&&res.data.rows)||[];renderAdminKelas_();showAdminKelasNotice_('Data KELAS berhasil dihapus.','success');
-  }).withFailureHandler(function(err){showAdminKelasNotice_(err.message,'error');}).deleteAdminSchoolKelas(rowNumber);
-}
-
-function downloadKelasTemplate_(){
-  const headers=['KELAS','TINGKAT','JURUSAN','WALI_KELAS','STATUS'];
-  const csv='\ufeff'+headers.join(',')+'\r\n';
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob),a=document.createElement('a');
-  a.href=url;a.download='TEMPLATE_KELAS.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
-  showAdminKelasNotice_('Template KELAS berhasil diunduh.','success');
-}
-
+function submitAdminKelasForm_(e){e.preventDefault();const btn=document.getElementById('adminKelasSaveBtn');btn.disabled=true;btn.textContent='Menyimpan...';const payload={_row:ADMIN_KELAS_STATE.editingRow||0,KELAS:document.getElementById('adminKelasName').value.trim(),TINGKAT:document.getElementById('adminKelasTingkat').value,JURUSAN:document.getElementById('adminKelasJurusan').value.trim(),WALI_KELAS:document.getElementById('adminKelasWali').value,STATUS:document.getElementById('adminKelasStatus').value};google.script.run.withSuccessHandler(function(res){btn.disabled=false;btn.textContent='Simpan Kelas';if(!res||!res.ok)return showAdminKelasNotice_(res&&res.message||'Gagal menyimpan KELAS.','error');ADMIN_KELAS_STATE.rows=(res.data&&res.data.rows)||[];closeAdminKelasForm_();renderAdminKelas_();showAdminKelasNotice_('Data KELAS berhasil disimpan.','success');}).withFailureHandler(function(err){btn.disabled=false;btn.textContent='Simpan Kelas';showAdminKelasNotice_(err.message,'error');}).saveAdminSchoolKelas(payload);}
+function deleteAdminKelas_(rowNumber){if(!confirm('Hapus data kelas ini?'))return;google.script.run.withSuccessHandler(function(res){if(!res||!res.ok)return showAdminKelasNotice_(res&&res.message||'Gagal menghapus KELAS.','error');ADMIN_KELAS_STATE.rows=(res.data&&res.data.rows)||[];renderAdminKelas_();showAdminKelasNotice_('Data KELAS berhasil dihapus.','success');}).withFailureHandler(function(err){showAdminKelasNotice_(err.message,'error');}).deleteAdminSchoolKelas(rowNumber);}
+function downloadKelasTemplate_(){const headers=['KELAS','TINGKAT','JURUSAN','WALI_KELAS','STATUS'];const csv='\ufeff'+headers.join(',')+'\r\n';const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='TEMPLATE_KELAS.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showAdminKelasNotice_('Template KELAS berhasil diunduh.','success');}
 function showAdminKelasNotice_(message,type){const el=document.getElementById('adminKelasNotice');if(!el)return;el.textContent=message||'';el.style.display=message?'block':'none';el.style.background=type==='error'?'#fff0f0':'#edf7f1';el.style.color=type==='error'?'#9b4242':'#28543f';}
-
-function hideOtherAdminPanels_(){
-  const master=document.getElementById('masterAdminPanel');if(master)master.style.display='none';
-  const admin=document.getElementById('adminSekolahPanel');if(admin&&admin.style.display==='none'){};
-  const kelas=document.getElementById('adminKelasPanel');if(kelas&&window.__ACTIVE_ADMIN_PANEL__!=='KELAS')kelas.style.display='none';
-  document.querySelectorAll('#content > .dynamic-content-section').forEach(function(el){el.remove();});
-}
+function hideOtherAdminPanels_(){const master=document.getElementById('masterAdminPanel');if(master)master.style.display='none';const admin=document.getElementById('adminSekolahPanel');if(admin&&window.__ACTIVE_ADMIN_PANEL__!=='USERS')admin.style.display='none';const kelas=document.getElementById('adminKelasPanel');if(kelas&&window.__ACTIVE_ADMIN_PANEL__!=='KELAS')kelas.style.display='none';const siswa=document.getElementById('adminSiswaPanel');if(siswa&&window.__ACTIVE_ADMIN_PANEL__!=='SISWA')siswa.style.display='none';document.querySelectorAll('#content > .dynamic-content-section').forEach(function(el){el.remove();});}
 function showAdminSchoolNotice_(message,type){const el=document.getElementById('adminSchoolNotice');if(!el)return;el.textContent=message||'';el.style.display=message?'block':'none';el.style.background=type==='error'?'#fff0f0':'#edf7f1';el.style.color=type==='error'?'#9b4242':'#28543f';}
 function escapeHtml_(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');}
+
+let ADMIN_SISWA_STATE={rows:[],page:1,perPage:10,editingRow:null,query:''};
+function ensureAdminSiswaPanel_(){let panel=document.getElementById('adminSiswaPanel');if(panel)return panel;const content=document.getElementById('content');if(!content)return null;panel=document.createElement('section');panel.id='adminSiswaPanel';panel.className='admin-school-panel';panel.style.display='none';panel.innerHTML='<div class="admin-school-hero"><div><div class="eyebrow">SIM SATRIA • ADMINISTRASI SEKOLAH</div><h2 id="adminSiswaSchoolName">Siswa Sekolah</h2><p id="adminSiswaSchoolMeta">Memuat data SISWA...</p></div><div class="admin-school-badge">DATA SISWA</div></div><div class="admin-siswa-info"><div><strong>SISWA</strong><span>Master siswa sekolah yang menjadi sumber bersama untuk PRESENSI KELAS, LITNUM, SMSS, TKA, ASESMEN, dan modul lainnya.</span></div><div class="admin-siswa-actions"><button class="admin-school-btn secondary" onclick="refreshAdminSiswa()">↻ Refresh</button><button class="admin-school-btn secondary" onclick="downloadSiswaTemplate_()">⇩ Download Template</button><button class="admin-school-btn secondary" onclick="document.getElementById(\'adminSiswaFileInput\').click()">⇧ Upload Template</button><button class="admin-school-btn primary" onclick="openAdminSiswaForm_()">＋ Tambah Siswa</button><input id="adminSiswaFileInput" type="file" accept=".csv,text/csv" style="display:none" onchange="uploadAdminSiswaTemplate_(event)"></div></div><div class="admin-siswa-toolbar"><div><strong id="adminSiswaCount">0 Siswa</strong><small>Search diproses minimal 3 karakter.</small></div><input id="adminSiswaSearch" type="search" minlength="3" placeholder="Cari KELAS, NAMA, NISN, NIS..." oninput="filterAdminSiswa_()"></div><div id="adminSiswaNotice" class="admin-school-notice" style="display:none"></div><div class="admin-school-table-wrap"><table class="admin-school-table admin-siswa-table"><thead><tr><th>KELAS</th><th>NAMA</th><th>NISN</th><th>NIS</th><th>JK</th><th>STATUS</th><th>Aksi</th></tr></thead><tbody id="adminSiswaBody"></tbody></table></div><div class="admin-siswa-pagination" id="adminSiswaPagination"></div>';content.appendChild(panel);const overlay=document.createElement('div');overlay.id='adminSiswaOverlay';overlay.className='admin-user-overlay';overlay.style.display='none';overlay.innerHTML='<div class="admin-user-modal admin-siswa-modal"><div class="admin-user-head"><div><div class="eyebrow">SISWA SEKOLAH</div><h3 id="adminSiswaFormTitle">Tambah Siswa</h3></div><button class="admin-user-close" onclick="closeAdminSiswaForm_()">×</button></div><form onsubmit="submitAdminSiswaForm_(event)"><div class="admin-user-grid"><label><span>KELAS</span><input id="adminSiswaKelas" required></label><label><span>NAMA</span><input id="adminSiswaNama" required></label><label><span>NISN</span><input id="adminSiswaNisn" inputmode="numeric"></label><label><span>NIS</span><input id="adminSiswaNis" inputmode="numeric"></label><label><span>JK</span><select id="adminSiswaJk"><option value="">Pilih</option><option value="L">L</option><option value="P">P</option></select></label><label><span>STATUS</span><select id="adminSiswaStatus"><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option></select></label></div><div class="admin-user-foot"><button type="button" class="admin-school-btn secondary" onclick="closeAdminSiswaForm_()">Batal</button><button id="adminSiswaSaveBtn" type="submit" class="admin-school-btn primary">Simpan Siswa</button></div></form></div>';document.body.appendChild(overlay);return panel;}
+function loadAdminSiswa(){if(!isCurrentAdminSekolah_())return showSessionError({message:'Akses KELOLA SISWA hanya untuk ADMIN_SEKOLAH.'});window.__ACTIVE_ADMIN_PANEL__='SISWA';const panel=ensureAdminSiswaPanel_();if(!panel)return;['adminSekolahPanel','adminKelasPanel','adminGuruPanel','adminKaryawanPanel'].forEach(function(id){const el=document.getElementById(id);if(el)el.style.display='none';});const master=document.getElementById('masterAdminPanel');if(master)master.style.display='none';panel.style.display='block';const school=SATRIA_SESSION&&SATRIA_SESSION.school||{},name=document.getElementById('adminSiswaSchoolName'),meta=document.getElementById('adminSiswaSchoolMeta');if(name)name.textContent=school.namaSekolah||school.nama_sekolah||'Siswa Sekolah';if(meta)meta.textContent='NPSN: '+(school.npsn||'-')+' • ID: '+(school.idSekolah||school.id_sekolah||'-')+' • Sheet: SISWA';const body=document.getElementById('adminSiswaBody');if(body)body.innerHTML='<tr><td colspan="7" style="padding:25px;text-align:center">Memuat data SISWA...</td></tr>';google.script.run.withSuccessHandler(function(res){if(!res||!res.ok)return showAdminSiswaNotice_(res&&res.message||'Gagal memuat SISWA.','error');ADMIN_SISWA_STATE.rows=(res.data&&res.data.rows)||[];ADMIN_SISWA_STATE.page=1;renderAdminSiswa_();}).withFailureHandler(function(err){showAdminSiswaNotice_(err.message,'error');}).getAdminSchoolSiswa();}
+function refreshAdminSiswa(){loadAdminSiswa();}
+function filterAdminSiswa_(){const q=((document.getElementById('adminSiswaSearch')||{}).value||'').trim();ADMIN_SISWA_STATE.query=q;ADMIN_SISWA_STATE.page=1;if(q&&q.length<3)showAdminSiswaNotice_('Pencarian baru diproses setelah minimal 3 karakter.','error');else showAdminSiswaNotice_('','success');renderAdminSiswa_();}
+function getFilteredAdminSiswa_(){const q=(ADMIN_SISWA_STATE.query||'').toLowerCase();if(!q||q.length<3)return ADMIN_SISWA_STATE.rows||[];return(ADMIN_SISWA_STATE.rows||[]).filter(function(r){return [r.KELAS,r.NAMA,r.NISN,r.NIS,r.JK,r.STATUS].join(' ').toLowerCase().indexOf(q)>=0;});}
+function renderAdminSiswa_(){const rows=getFilteredAdminSiswa_(),total=rows.length,totalPages=Math.max(1,Math.ceil(total/ADMIN_SISWA_STATE.perPage));ADMIN_SISWA_STATE.page=Math.min(Math.max(1,ADMIN_SISWA_STATE.page),totalPages);const start=(ADMIN_SISWA_STATE.page-1)*ADMIN_SISWA_STATE.perPage,pageRows=rows.slice(start,start+ADMIN_SISWA_STATE.perPage),body=document.getElementById('adminSiswaBody'),count=document.getElementById('adminSiswaCount');if(count)count.textContent=total+' Siswa'+(ADMIN_SISWA_STATE.query&&ADMIN_SISWA_STATE.query.length>=3?' ditemukan':'');if(body)body.innerHTML=pageRows.map(function(r){return '<tr><td><strong>'+escapeHtml_(r.KELAS)+'</strong></td><td>'+escapeHtml_(r.NAMA)+'</td><td>'+escapeHtml_(r.NISN||'—')+'</td><td>'+escapeHtml_(r.NIS||'—')+'</td><td>'+escapeHtml_(r.JK||'—')+'</td><td class="admin-user-status '+(String(r.STATUS).toUpperCase()==='ACTIVE'?'active':'inactive')+'">'+escapeHtml_(r.STATUS)+'</td><td><button class="admin-row-btn" onclick="openAdminSiswaForm_('+Number(r._row)+')">Edit</button><button class="admin-row-btn danger" onclick="deleteAdminSiswa_('+Number(r._row)+')">Hapus</button></td></tr>';}).join('')||'<tr><td colspan="7" style="padding:25px;text-align:center;color:#71847b">Belum ada data SISWA.</td></tr>';renderAdminSiswaPagination_(totalPages,total);}
+function renderAdminSiswaPagination_(totalPages,total){const box=document.getElementById('adminSiswaPagination');if(!box)return;const p=ADMIN_SISWA_STATE.page;box.innerHTML='<button class="admin-school-btn secondary" '+(p<=1?'disabled':'')+' onclick="changeAdminSiswaPage_('+(p-1)+')">‹ Prev</button><span>Halaman <strong>'+p+'</strong> / '+totalPages+' • '+total+' data</span><button class="admin-school-btn secondary" '+(p>=totalPages?'disabled':'')+' onclick="changeAdminSiswaPage_('+(p+1)+')">Next ›</button>';}
+function changeAdminSiswaPage_(page){ADMIN_SISWA_STATE.page=page;renderAdminSiswa_();}
+function openAdminSiswaForm_(rowNumber){ADMIN_SISWA_STATE.editingRow=rowNumber||null;const row=rowNumber?(ADMIN_SISWA_STATE.rows||[]).find(function(x){return Number(x._row)===Number(rowNumber);}):{};document.getElementById('adminSiswaFormTitle').textContent=rowNumber?'Edit Siswa':'Tambah Siswa';document.getElementById('adminSiswaKelas').value=row.KELAS||'';document.getElementById('adminSiswaNama').value=row.NAMA||'';document.getElementById('adminSiswaNisn').value=row.NISN||'';document.getElementById('adminSiswaNis').value=row.NIS||'';document.getElementById('adminSiswaJk').value=row.JK||'';document.getElementById('adminSiswaStatus').value=row.STATUS||'ACTIVE';document.getElementById('adminSiswaOverlay').style.display='flex';}
+function closeAdminSiswaForm_(){document.getElementById('adminSiswaOverlay').style.display='none';ADMIN_SISWA_STATE.editingRow=null;}
+function submitAdminSiswaForm_(e){e.preventDefault();const btn=document.getElementById('adminSiswaSaveBtn');btn.disabled=true;btn.textContent='Menyimpan...';const payload={_row:ADMIN_SISWA_STATE.editingRow||0,KELAS:document.getElementById('adminSiswaKelas').value.trim(),NAMA:document.getElementById('adminSiswaNama').value.trim(),NISN:document.getElementById('adminSiswaNisn').value.trim(),NIS:document.getElementById('adminSiswaNis').value.trim(),JK:document.getElementById('adminSiswaJk').value,STATUS:document.getElementById('adminSiswaStatus').value};google.script.run.withSuccessHandler(function(res){btn.disabled=false;btn.textContent='Simpan Siswa';if(!res||!res.ok)return showAdminSiswaNotice_(res&&res.message||'Gagal menyimpan SISWA.','error');ADMIN_SISWA_STATE.rows=(res.data&&res.data.rows)||[];closeAdminSiswaForm_();renderAdminSiswa_();showAdminSiswaNotice_('Data SISWA berhasil disimpan.','success');}).withFailureHandler(function(err){btn.disabled=false;btn.textContent='Simpan Siswa';showAdminSiswaNotice_(err.message,'error');}).saveAdminSchoolSiswa(payload);}
+function deleteAdminSiswa_(rowNumber){if(!confirm('Hapus data SISWA ini?'))return;google.script.run.withSuccessHandler(function(res){if(!res||!res.ok)return showAdminSiswaNotice_(res&&res.message||'Gagal menghapus SISWA.','error');ADMIN_SISWA_STATE.rows=(res.data&&res.data.rows)||[];renderAdminSiswa_();showAdminSiswaNotice_('Data SISWA berhasil dihapus.','success');}).withFailureHandler(function(err){showAdminSiswaNotice_(err.message,'error');}).deleteAdminSchoolSiswa(rowNumber);}
+function downloadSiswaTemplate_(){const headers=['KELAS','NAMA','NISN','NIS','JK','STATUS'];const csv='\ufeff'+headers.join(',')+'\r\n';const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='TEMPLATE_SISWA.csv';document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showAdminSiswaNotice_('Template SISWA berhasil diunduh.','success');}
+function parseAdminSiswaCsv_(text){const rows=[],row=[];let cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(c==='"'){if(quoted&&next==='"'){cell+='"';i++;}else quoted=!quoted;}else if(c===','&&!quoted){row.push(cell);cell='';}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&next==='\n')i++;row.push(cell);cell='';if(row.some(function(v){return String(v).trim()!=='';}))rows.push(row.splice(0,row.length));}else cell+=c;}row.push(cell);if(row.some(function(v){return String(v).trim()!=='';}))rows.push(row);return rows;}
+function uploadAdminSiswaTemplate_(event){const file=event.target.files&&event.target.files[0];if(!file)return;event.target.value='';if(file.size>5*1024*1024){showAdminSiswaNotice_('Ukuran template maksimal 5 MB.','error');return;}const reader=new FileReader();reader.onload=function(e){try{const matrix=parseAdminSiswaCsv_(e.target.result||'');if(matrix.length<2)throw new Error('Template tidak memiliki data.');const headers=matrix[0].map(function(v){return String(v).replace(/^\ufeff/,'').trim().toUpperCase();}),expected=['KELAS','NAMA','NISN','NIS','JK','STATUS'];if(headers.join('|')!==expected.join('|'))throw new Error('Header template harus persis: '+expected.join(', '));const rows=matrix.slice(1).filter(function(r){return r.some(function(v){return String(v).trim()!=='';});}).map(function(r){return{KELAS:String(r[0]||'').trim(),NAMA:String(r[1]||'').trim(),NISN:String(r[2]||'').trim(),NIS:String(r[3]||'').trim(),JK:String(r[4]||'').trim().toUpperCase(),STATUS:String(r[5]||'ACTIVE').trim().toUpperCase()};});if(!rows.length)throw new Error('Tidak ada baris data SISWA.');showAdminSiswaNotice_('Mengunggah '+rows.length+' data SISWA...','success');google.script.run.withSuccessHandler(function(res){if(!res||!res.ok)return showAdminSiswaNotice_(res&&res.message||'Upload template gagal.','error');ADMIN_SISWA_STATE.rows=(res.data&&res.data.rows)||[];ADMIN_SISWA_STATE.page=1;renderAdminSiswa_();showAdminSiswaNotice_('Upload selesai. Masuk: '+res.data.inserted+', dilewati: '+res.data.skipped+(res.data.errors&&res.data.errors.length?' • error: '+res.data.errors.length:'')+'.','success');}).withFailureHandler(function(err){showAdminSiswaNotice_(err.message,'error');}).importAdminSchoolSiswa(rows);}catch(err){showAdminSiswaNotice_(err.message||String(err),'error');}};reader.readAsText(file,'UTF-8');}
+function showAdminSiswaNotice_(message,type){const el=document.getElementById('adminSiswaNotice');if(!el)return;el.textContent=message||'';el.style.display=message?'block':'none';el.style.background=type==='error'?'#fff0f0':'#edf7f1';el.style.color=type==='error'?'#9b4242':'#28543f';}
+function initAdminSiswaNav_(){const user=SATRIA_SESSION&&SATRIA_SESSION.user||{};if(String(user.role||'').toUpperCase()!=='ADMIN_SEKOLAH')return;if(document.getElementById('schoolSiswaNav'))return;const sidebar=document.getElementById('schoolAdminSection');if(!sidebar)return;const btn=document.createElement('button');btn.id='schoolSiswaNav';btn.className='nav-item';btn.dataset.menu='ADMIN_SISWA';btn.innerHTML='🎓 <span>Kelola Siswa</span>';btn.onclick=function(){document.querySelectorAll('.nav-item').forEach(function(el){el.classList.toggle('active',el===btn);});loadAdminSiswa();};sidebar.appendChild(btn);}
+(function bootAdminSiswaNav_(){let tries=0;const timer=setInterval(function(){tries++;initAdminSiswaNav_();if(document.getElementById('schoolSiswaNav')||tries>60)clearInterval(timer);},250);})();
 </script>
