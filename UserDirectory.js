@@ -7,11 +7,8 @@
  */
 const SCHOOL_USERS_SHEET = 'USERS';
 
-/**
- * Cari user berdasarkan email pada USERS sekolah.
- * Pencarian dilakukan pada sekolah yang ACTIVE di MASTER_SEKOLAH.
- */
-function findUserByEmail_(email) {
+/** Cari user berdasarkan email pada USERS sekolah ACTIVE. */
+function findUserByEmailFromSchoolUsers_(email) {
   const targetEmail = clean_(email).toLowerCase();
   if (!targetEmail) return null;
 
@@ -21,40 +18,25 @@ function findUserByEmail_(email) {
     });
 
   for (let i = 0; i < schools.length; i++) {
-    const school = schools[i];
-    const user = findUserInSchool_(school, targetEmail);
+    const user = findUserInSchool_(schools[i], targetEmail);
     if (user) return user;
   }
-
   return null;
 }
 
-/**
- * Baca USERS pada satu sekolah.
- * Header USERS dibuat fleksibel karena format data sekolah bisa berbeda.
- */
 function findUserInSchool_(school, targetEmail) {
   const spreadsheetId = clean_(school && school.spreadsheet_id);
   if (!spreadsheetId) return null;
 
   let ss;
-  try {
-    ss = SpreadsheetApp.openById(spreadsheetId);
-  } catch (e) {
-    return null;
-  }
+  try { ss = SpreadsheetApp.openById(spreadsheetId); } catch (e) { return null; }
 
   const sheet = ss.getSheetByName(SCHOOL_USERS_SHEET);
   if (!sheet || sheet.getLastRow() < 2 || sheet.getLastColumn() < 1) return null;
 
   const values = sheet.getDataRange().getValues();
-  const headers = values[0].map(function(value) {
-    return normalizeHeader_(value);
-  });
-
-  const emailIndex = findHeaderIndex_(headers, [
-    'email', 'email_user', 'email pengguna', 'akun', 'username'
-  ]);
+  const headers = values[0].map(normalizeHeader_);
+  const emailIndex = findHeaderIndex_(headers, ['email','email_user','email pengguna','akun','username']);
   if (emailIndex < 0) return null;
 
   for (let r = 1; r < values.length; r++) {
@@ -63,18 +45,13 @@ function findUserInSchool_(school, targetEmail) {
     if (!rowEmail || rowEmail !== targetEmail) continue;
 
     const obj = rowToObject_(headers, row);
-    const role = normalizeUserRole_(firstValue_(obj, [
-      'role', 'kode_role', 'jenis_user', 'jenis pengguna', 'tipe_user', 'tipe pengguna'
-    ]));
-    const status = normalizeUserStatus_(firstValue_(obj, [
-      'status', 'status_user', 'aktif', 'active'
-    ]));
-
+    const role = normalizeUserRole_(firstValue_(obj, ['role','kode_role','jenis_user','jenis pengguna','tipe_user','tipe pengguna']));
+    const status = normalizeUserStatus_(firstValue_(obj, ['status','status_user','aktif','active']));
     if (status && status !== APP_CONFIG.STATUS.ACTIVE) return null;
 
     return {
-      id_user: firstValue_(obj, ['id_user', 'id', 'nip', 'nisn', 'username']) || '',
-      nama: firstValue_(obj, ['nama', 'nama_user', 'nama_lengkap', 'name']) || '',
+      id_user: firstValue_(obj, ['id_user','id','nip','nisn','username']) || '',
+      nama: firstValue_(obj, ['nama','nama_user','nama_lengkap','name']) || '',
       email: rowEmail,
       role: role || APP_CONFIG.ROLE.GURU,
       status: status || APP_CONFIG.STATUS.ACTIVE,
@@ -85,34 +62,23 @@ function findUserInSchool_(school, targetEmail) {
       _source: SCHOOL_USERS_SHEET
     };
   }
-
   return null;
 }
 
-/**
- * Ambil semua user dari satu sekolah untuk kebutuhan OWNER / administrasi.
- */
+/** Ambil semua user dari satu sekolah untuk OWNER/administrasi. */
 function getSchoolUsers_(school) {
   const spreadsheetId = clean_(school && school.spreadsheet_id);
   if (!spreadsheetId) return [];
 
   let ss;
-  try {
-    ss = SpreadsheetApp.openById(spreadsheetId);
-  } catch (e) {
-    return [];
-  }
+  try { ss = SpreadsheetApp.openById(spreadsheetId); } catch (e) { return []; }
 
   const sheet = ss.getSheetByName(SCHOOL_USERS_SHEET);
   if (!sheet || sheet.getLastRow() < 2 || sheet.getLastColumn() < 1) return [];
 
   const values = sheet.getDataRange().getValues();
-  const headers = values[0].map(function(value) {
-    return normalizeHeader_(value);
-  });
-  const emailIndex = findHeaderIndex_(headers, [
-    'email', 'email_user', 'email pengguna', 'akun', 'username'
-  ]);
+  const headers = values[0].map(normalizeHeader_);
+  const emailIndex = findHeaderIndex_(headers, ['email','email_user','email pengguna','akun','username']);
   if (emailIndex < 0) return [];
 
   return values.slice(1).map(function(row, index) {
@@ -120,17 +86,13 @@ function getSchoolUsers_(school) {
     const email = clean_(row[emailIndex]).toLowerCase();
     if (!email) return null;
 
-    const role = normalizeUserRole_(firstValue_(obj, [
-      'role', 'kode_role', 'jenis_user', 'jenis pengguna', 'tipe_user', 'tipe pengguna'
-    ]));
-    const status = normalizeUserStatus_(firstValue_(obj, [
-      'status', 'status_user', 'aktif', 'active'
-    ]));
+    const role = normalizeUserRole_(firstValue_(obj, ['role','kode_role','jenis_user','jenis pengguna','tipe_user','tipe pengguna']));
+    const status = normalizeUserStatus_(firstValue_(obj, ['status','status_user','aktif','active']));
 
     return {
       _row: index + 2,
-      id_user: firstValue_(obj, ['id_user', 'id', 'nip', 'nisn', 'username']) || '',
-      nama: firstValue_(obj, ['nama', 'nama_user', 'nama_lengkap', 'name']) || '',
+      id_user: firstValue_(obj, ['id_user','id','nip','nisn','username']) || '',
+      nama: firstValue_(obj, ['nama','nama_user','nama_lengkap','name']) || '',
       email: email,
       role: role || '',
       status: status || APP_CONFIG.STATUS.ACTIVE,
@@ -143,10 +105,7 @@ function getSchoolUsers_(school) {
   }).filter(Boolean);
 }
 
-/**
- * OWNER: seluruh user dari USERS semua sekolah ACTIVE.
- * Data hanya dibaca, bukan ditulis ke MASTER_USER.
- */
+/** OWNER: seluruh user dari USERS semua sekolah ACTIVE. Read-only. */
 function getAllSchoolUsers_() {
   requireMasterOwner_();
   const schools = readSheetObjects_(getMasterSpreadsheet_(), MASTER.SEKOLAH)
@@ -156,9 +115,7 @@ function getAllSchoolUsers_() {
 
   const result = [];
   schools.forEach(function(school) {
-    getSchoolUsers_(school).forEach(function(user) {
-      result.push(user);
-    });
+    getSchoolUsers_(school).forEach(function(user) { result.push(user); });
   });
   return result;
 }
@@ -169,8 +126,7 @@ function normalizeHeader_(value) {
 
 function findHeaderIndex_(headers, candidates) {
   for (let i = 0; i < candidates.length; i++) {
-    const target = normalizeHeader_(candidates[i]);
-    const index = headers.indexOf(target);
+    const index = headers.indexOf(normalizeHeader_(candidates[i]));
     if (index >= 0) return index;
   }
   return -1;
@@ -178,9 +134,7 @@ function findHeaderIndex_(headers, candidates) {
 
 function rowToObject_(headers, row) {
   const obj = {};
-  headers.forEach(function(header, index) {
-    if (header) obj[header] = row[index];
-  });
+  headers.forEach(function(header, index) { if (header) obj[header] = row[index]; });
   return obj;
 }
 
@@ -209,7 +163,7 @@ function normalizeUserRole_(value) {
 function normalizeUserStatus_(value) {
   const raw = clean_(value).toUpperCase();
   if (!raw) return '';
-  if (['TRUE', 'YA', 'YES', 'AKTIF', 'ACTIVE', '1'].indexOf(raw) >= 0) return APP_CONFIG.STATUS.ACTIVE;
-  if (['FALSE', 'TIDAK', 'NO', 'NONAKTIF', 'INACTIVE', '0'].indexOf(raw) >= 0) return APP_CONFIG.STATUS.INACTIVE;
+  if (['TRUE','YA','YES','AKTIF','ACTIVE','1'].indexOf(raw) >= 0) return APP_CONFIG.STATUS.ACTIVE;
+  if (['FALSE','TIDAK','NO','NONAKTIF','INACTIVE','0'].indexOf(raw) >= 0) return APP_CONFIG.STATUS.INACTIVE;
   return raw;
 }
