@@ -1,8 +1,8 @@
 /** Operasi spreadsheet melalui Gateway. */
 function gatewayEnsureSheet_(schoolId, sheetName, headers) {
   const name = gatewayClean_(sheetName).toUpperCase();
-  const allowedCreate = ['KELAS','GURU'];
-  gatewayRequire_(allowedCreate.indexOf(name) >= 0, 'Gateway hanya dapat membuat sheet KELAS atau GURU.');
+  const allowedCreate = ['KELAS','GURU','KARYAWAN'];
+  gatewayRequire_(allowedCreate.indexOf(name) >= 0, 'Gateway hanya dapat membuat sheet KELAS, GURU, atau KARYAWAN.');
 
   const requestedHeaders = Array.isArray(headers) ? headers.map(gatewayClean_).filter(Boolean) : [];
   gatewayRequire_(requestedHeaders.length > 0, 'Header sheet wajib dikirim.');
