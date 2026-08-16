@@ -1,69 +1,70 @@
 <nav class="sidebar-nav">
   <div class="nav-title">MENU</div>
-
-  <button class="nav-item active" data-menu="DASHBOARD" onclick="loadDashboard()">
-    ⌂ <span>Dashboard</span>
-  </button>
-
+  <button class="nav-item active" data-menu="DASHBOARD" onclick="loadDashboard()">⌂ <span>Dashboard</span></button>
   <div id="dynamicMenus"></div>
-
-  <div id="masterOwnerSection" style="display:none; margin-top:18px;">
+  <div id="masterOwnerSection" style="display:none;margin-top:18px;">
     <div class="nav-title">OWNER</div>
-    <button id="masterAdminNav" class="nav-item" data-menu="MASTER_ADMIN" onclick="selectMenu('MASTER_ADMIN')" style="display:none;">
-      ⚙ <span>Pengaturan MASTER</span>
-    </button>
+    <button id="masterAdminNav" class="nav-item" data-menu="MASTER_ADMIN" onclick="selectMenu('MASTER_ADMIN')" style="display:none;">⚙ <span>Pengaturan MASTER</span></button>
   </div>
-
-  <div id="schoolAdminSection" style="display:none; margin-top:18px;">
+  <div id="schoolAdminSection" style="display:none;margin-top:18px;">
     <div class="nav-title">ADMINISTRASI SEKOLAH</div>
-
-    <button id="schoolAdminNav" class="nav-item" data-menu="ADMIN_SEKOLAH" onclick="routeAdminSchoolMenu_('ADMIN_SEKOLAH')">
-      ⚙ <span>Admin Sekolah</span>
-    </button>
-
-    <button id="schoolKepalaSekolahNav" class="nav-item" data-menu="ADMIN_KEPALA_SEKOLAH" onclick="routeAdminSchoolMenu_('ADMIN_KEPALA_SEKOLAH')">
-      🏫 <span>Kepala Sekolah</span>
-    </button>
-
-    <button id="schoolKelasNav" class="nav-item" data-menu="ADMIN_KELAS" onclick="routeAdminSchoolMenu_('ADMIN_KELAS')">
-      ▦ <span>Kelola Kelas</span>
-    </button>
-
-    <button id="schoolGuruNav" class="nav-item" data-menu="ADMIN_GURU" onclick="routeAdminSchoolMenu_('ADMIN_GURU')">
-      👩‍🏫 <span>Kelola Guru</span>
-    </button>
-
-    <button id="schoolKaryawanNav" class="nav-item" data-menu="ADMIN_KARYAWAN" onclick="routeAdminSchoolMenu_('ADMIN_KARYAWAN')">
-      👥 <span>Kelola Karyawan</span>
-    </button>
-
-    <button id="schoolSiswaNav" class="nav-item" data-menu="ADMIN_SISWA" onclick="routeAdminSchoolMenu_('ADMIN_SISWA')">
-      🎓 <span>Kelola Siswa</span>
-    </button>
+    <button id="schoolAdminNav" class="nav-item" data-menu="ADMIN_SEKOLAH" onclick="routeAdminSchoolMenu_('ADMIN_SEKOLAH')">⚙ <span>Admin Sekolah</span></button>
+    <button id="schoolKepalaSekolahNav" class="nav-item" data-menu="ADMIN_KEPALA_SEKOLAH" onclick="routeAdminSchoolMenu_('ADMIN_KEPALA_SEKOLAH')">🏫 <span>Kepala Sekolah</span></button>
+    <button id="schoolKelasNav" class="nav-item" data-menu="ADMIN_KELAS" onclick="routeAdminSchoolMenu_('ADMIN_KELAS')">▦ <span>Kelola Kelas</span></button>
+    <button id="schoolGuruNav" class="nav-item" data-menu="ADMIN_GURU" onclick="routeAdminSchoolMenu_('ADMIN_GURU')">👩‍🏫 <span>Kelola Guru</span></button>
+    <button id="schoolKaryawanNav" class="nav-item" data-menu="ADMIN_KARYAWAN" onclick="routeAdminSchoolMenu_('ADMIN_KARYAWAN')">👥 <span>Kelola Karyawan</span></button>
+    <button id="schoolSiswaNav" class="nav-item" data-menu="ADMIN_SISWA" onclick="routeAdminSchoolMenu_('ADMIN_SISWA')">🎓 <span>Kelola Siswa</span></button>
   </div>
 </nav>
-
 <style id="satriaSidebarWidthFix">
-/* Sidebar sedikit diperlebar agar nama menu MASTER_MENU lebih nyaman dibaca. */
-aside#sidebar{width:245px!important;flex:0 0 245px!important;padding:18px!important}
-#sidebar .sidebar-nav{width:100%;min-width:0}
-#sidebar .nav-item{width:100%;min-width:0}
+aside#sidebar{width:270px!important;flex:0 0 270px!important;min-width:270px!important;padding:18px!important;overflow:visible!important}
+#sidebar .sidebar-nav{width:100%!important;min-width:0}
+#sidebar .nav-item{width:100%!important;min-width:0}
 #sidebar .nav-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(max-width:560px){aside#sidebar{width:180px!important;flex-basis:180px!important;padding:10px!important}}
+@media(max-width:900px){aside#sidebar{width:250px!important;flex:0 0 250px!important;min-width:250px!important}}
+@media(max-width:560px){aside#sidebar{width:235px!important;flex:0 0 235px!important;min-width:235px!important;padding:12px!important}}
 </style>
-
 <script>
 function routeAdminSchoolMenu_(menuCode){
   var code=String(menuCode||'').toUpperCase();
   if(!code)return;
   if(typeof selectMenu==='function'){
-    if(code==='ADMIN_KEPALA_SEKOLAH' && typeof loadAdminKepalaSekolah==='function'){
-      return loadAdminKepalaSekolah();
-    }
-    if(code==='ADMIN_SISWA' && typeof loadAdminSiswa==='function'){
-      return loadAdminSiswa();
-    }
+    if(code==='ADMIN_KEPALA_SEKOLAH'&&typeof loadAdminKepalaSekolah==='function')return loadAdminKepalaSekolah();
+    if(code==='ADMIN_SISWA'&&typeof loadAdminSiswa==='function')return loadAdminSiswa();
     return selectMenu(code);
   }
 }
+(function installKaryawanMenuGuard_(){
+  var installed=false;
+  function normalize(s){return String(s||'').trim().toUpperCase();}
+  function ensureChildren(){
+    if(installed)return;
+    var box=document.getElementById('dynamicMenus');
+    if(!box)return;
+    var group=Array.prototype.slice.call(box.querySelectorAll('.nav-group')).find(function(g){
+      var p=g.querySelector('.nav-parent .nav-label');
+      return p&&normalize(p.textContent)==='SATRIA KARYAWAN';
+    });
+    if(!group)return;
+    var children=group.querySelector('.nav-children');
+    if(!children)return;
+    var required=[
+      ['MONITORING_KERJA','Monitoring Kerja','cil-briefcase'],
+      ['MONITORING_KEBERSIHAN','Monitoring Kebersihan','cil-list'],
+      ['MONITORING_KEAMANAN','Monitoring Keamanan','cil-shield-alt'],
+      ['MONITORING_PARKIR','Monitoring Parkir','cil-car-alt']
+    ];
+    required.forEach(function(item){
+      if(children.querySelector('[data-menu="'+item[0]+'"]'))return;
+      var w=document.createElement('div');w.className='nav-leaf';
+      var b=document.createElement('button');b.type='button';b.className='nav-item nav-child';b.dataset.menu=item[0];
+      b.innerHTML='<i class="nav-icon '+item[2]+'" aria-hidden="true"></i><span class="nav-label">'+item[1]+'</span>';
+      b.onclick=function(){if(typeof selectMenu==='function')selectMenu(item[0]);};
+      w.appendChild(b);children.appendChild(w);
+    });
+    installed=true;
+  }
+  var timer=setInterval(function(){ensureChildren();if(installed)clearInterval(timer);},200);
+  document.addEventListener('DOMContentLoaded',ensureChildren);
+})();
 </script>
