@@ -1,6 +1,5 @@
 <script>
 (function installParentMenuRenderer_(){
-  /* CoreUI Icons dipakai sebagai sistem ikon sidebar. */
   function ensureCoreUIIcons_(){
     if(document.getElementById('satriaCoreUIIcons'))return;
     var link=document.createElement('link');
@@ -18,7 +17,6 @@
   function order(m){var n=Number(m&&m.urutan);return Number.isFinite(n)?n:999999;}
   function key(s){return String(s||'').trim().toUpperCase();}
 
-  /* Menu berikut sudah memiliki blok khusus ADMINISTRASI SEKOLAH di sidebar. */
   function isStaticSchoolAdminMenu_(m){
     return /^ADMIN_(SEKOLAH|KEPALA_SEKOLAH|KELAS|GURU|KARYAWAN|SISWA)$/.test(code(m));
   }
@@ -66,7 +64,8 @@
     var byCode={},byName={},groups={};
     source.forEach(function(m){
       byCode[code(m)]=m;
-      byName[key(name(m))]=m;
+      var n=key(name(m));
+      if(n)byName[n]=m;
     });
 
     source.forEach(function(m){
@@ -76,6 +75,7 @@
         groups[p].push(m);
       }
     });
+
     Object.keys(groups).forEach(function(p){
       groups[p].sort(function(a,b){return order(a)-order(b);});
     });
@@ -126,8 +126,8 @@
 
     roots.forEach(function(m){
       var c=code(m);
-      var children=groups[c]||[];
-      var childrenByName=groups[key(name(m))]||[];
+      var children=(groups[c]||[]).filter(function(child){return code(child)!==c;});
+      var childrenByName=(groups[key(name(m))]||[]).filter(function(child){return code(child)!==c;});
       if(children.length || childrenByName.length){
         var all=children.length?children:childrenByName;
         box.appendChild(makeGroup(name(m)||c,all,m));
@@ -137,12 +137,27 @@
       }
     });
 
+    /*
+     * Virtual/declared parent:
+     * MASTER_MENU boleh menggunakan parent_id berdasarkan kode_menu atau
+     * nama_menu. Termasuk kasus seperti:
+     *   kode_menu = SATRIA KARYAWAN
+     *   nama_menu = (kosong)
+     *   parent_id = SATRIA KARYAWAN
+     * Anak tetap ditampilkan di bawah label "SATRIA KARYAWAN" dan baris
+     * parent itu sendiri tidak ikut tampil sebagai anak.
+     */
     Object.keys(groups).sort(function(a,b){
-      return order(groups[a][0])-order(groups[b][0]);
+      var pa=byCode[a]||byName[a], pb=byCode[b]||byName[b];
+      var oa=pa?order(pa):order(groups[a][0]);
+      var ob=pb?order(pb):order(groups[b][0]);
+      return oa-ob;
     }).forEach(function(p){
       var parentMenu=byCode[p]||byName[p]||null;
-      var label=parentMenu?name(parentMenu):p;
-      var children=groups[p].filter(function(m){return !rendered[code(m)];});
+      var label=parentMenu?(name(parentMenu)||code(parentMenu)):p;
+      var children=groups[p].filter(function(m){
+        return code(m)!==p && !rendered[code(m)];
+      });
       if(!children.length)return;
       box.appendChild(makeGroup(label,children,parentMenu));
     });
