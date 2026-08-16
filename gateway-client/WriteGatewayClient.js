@@ -4,64 +4,42 @@
  */
 function gatewayCall_(action, payload) {
   const cfg = getGatewayConfig_();
-
-  if (!cfg.url || !cfg.token) {
-    throw new Error('Write Gateway belum dikonfigurasi.');
-  }
+  if (!cfg.url || !cfg.token) throw new Error('Write Gateway belum dikonfigurasi.');
 
   const school = getGatewayCurrentSchool_();
   const schoolId = school && (school.idSekolah || school.id_sekolah)
-    ? (school.idSekolah || school.id_sekolah)
-    : '';
+    ? (school.idSekolah || school.id_sekolah) : '';
+  if (!schoolId) throw new Error('ID sekolah pengguna tidak ditemukan.');
 
-  if (!schoolId) {
-    throw new Error('ID sekolah pengguna tidak ditemukan.');
-  }
-
-  const body = Object.assign({}, payload || {}, {
-    action: action,
-    schoolId: schoolId,
-    token: cfg.token
-  });
-
+  const body = Object.assign({}, payload || {}, {action: action, schoolId: schoolId, token: cfg.token});
   return gatewayFetchJson_(cfg, body, 'Write Gateway');
 }
 
-/**
- * Lookup identitas user melalui Gateway.
- * Gateway menentukan sekolah dari MASTER_SEKOLAH lalu membaca USERS sekolah.
- */
 function gatewayLookupCurrentUser_() {
   const cfg = getGatewayConfig_();
-  if (!cfg.url || !cfg.token) {
-    throw new Error('Write Gateway belum dikonfigurasi.');
-  }
-
+  if (!cfg.url || !cfg.token) throw new Error('Write Gateway belum dikonfigurasi.');
   const email = Session.getActiveUser().getEmail();
-  if (!email) {
-    throw new Error('Akun Google tidak teridentifikasi.');
-  }
+  if (!email) throw new Error('Akun Google tidak teridentifikasi.');
 
   const data = gatewayFetchJson_(cfg, {
     action: 'AUTH_LOOKUP_USER',
     email: email,
     token: cfg.token
   }, 'Gateway Auth');
-
   return data && data.data ? data.data : null;
 }
 
 /**
  * Panggil Web App Gateway sebagai endpoint server-to-server.
  *
- * GATEWAY_TOKEN tetap menjadi autentikasi aplikasi utama.
- * OAuth Bearer dikirim sebagai lapisan kompatibilitas tambahan agar request
- * UrlFetchApp juga dapat melewati deployment Gateway yang disetel
- * "Anyone with Google account". Jika Gateway disetel "Anyone", Bearer ini
- * tidak mengubah otorisasi aplikasi karena Gateway tetap memeriksa token.
+ * PENTING: jangan mengirim OAuth Bearer dari Web App SIM SATRIA.
+ * Web App utama berjalan sebagai USER_ACCESSING, sehingga Bearer dapat
+ * mewakili akun masayid09/masayid11 dan Google dapat menolak deployment
+ * Gateway dengan HTTP 403 sebelum doPost() dijalankan.
  *
- * Token aplikasi tetap berada di body request dan tidak pernah dikirim ke
- * frontend.
+ * Gateway harus dideploy sebagai owner/ME dengan akses "Anyone".
+ * Keamanan aplikasi tetap berasal dari GATEWAY_TOKEN pada body dan validasi
+ * schoolId di Gateway.
  */
 function gatewayFetchJson_(cfg, body, label) {
   let res;
@@ -74,26 +52,12 @@ function gatewayFetchJson_(cfg, body, label) {
       followRedirects: true
     };
 
-    // Apps Script Web App dengan akses "Anyone with Google account"
-    // membutuhkan autentikasi Google pada request server-to-server.
-    // GATEWAY_TOKEN tetap divalidasi oleh Gateway sebagai credential aplikasi.
-    try {
-      const oauthToken = ScriptApp.getOAuthToken();
-      if (oauthToken) {
-        options.headers = {
-          Authorization: 'Bearer ' + oauthToken
-        };
-      }
-    } catch (authError) {
-      // Jika OAuth token tidak tersedia, Gateway yang publik tetap dapat
-      // dipanggil menggunakan GATEWAY_TOKEN pada body.
-    }
-
+    // Sengaja TANPA ScriptApp.getOAuthToken()/Authorization Bearer.
+    // Request harus independen dari akun Google pengguna.
     res = UrlFetchApp.fetch(cfg.url, options);
   } catch (e) {
     throw new Error(
-      'Gagal menghubungi ' + label + '. ' +
-      'Periksa URL deployment Gateway dan akses Web App. Detail: ' +
+      'Gagal menghubungi ' + label + '. Periksa URL deployment Gateway dan akses Web App. Detail: ' +
       (e && e.message ? e.message : String(e))
     );
   }
@@ -120,7 +84,6 @@ function gatewayFetchJson_(cfg, body, label) {
       ' | ' + (data && data.message ? data.message : 'Gateway menolak operasi.')
     );
   }
-
   return data;
 }
 
@@ -129,10 +92,7 @@ function getGatewayCurrentSchool_() {
     const session = getSessionContext();
     const data = session && session.ok && session.data ? session.data : session;
     if (data && data.school) return data.school;
-  } catch (e) {
-    // Fallback hanya untuk konteks setup/legacy.
-  }
-
+  } catch (e) {}
   return getCurrentSchool_();
 }
 
@@ -144,7 +104,7 @@ function gatewayPreview_(value, maxLength) {
 
 function saveDataViaGateway(menu, sheet, row) {
   requirePermission_(APP_CONFIG.PERMISSION.INPUT, menu);
-  return gatewayCall_('SPREADSHEET_APPEND', { sheet: sheet, row: row });
+  return gatewayCall_('SPREADSHEET_APPEND', {sheet: sheet, row: row});
 }
 
 function uploadViaGateway(menu, file) {
@@ -152,27 +112,13 @@ function uploadViaGateway(menu, file) {
   return gatewayCall_('DRIVE_UPLOAD', file);
 }
 
-/**
- * Membuat PDF untuk akun Google user yang sedang login.
- * Email TIDAK diambil dari frontend; server mengambilnya dari Session aktif.
- * Gateway kemudian memberikan hak VIEW hanya kepada akun tersebut.
- */
 function pdfViaGateway(menu, payload) {
   requirePermission_(APP_CONFIG.PERMISSION.PDF, menu);
-
   const email = clean_(Session.getActiveUser().getEmail()).toLowerCase();
-  if (!email) {
-    throw new Error('Akun Google pengguna tidak teridentifikasi. PDF tidak dapat dikirim ke akun user.');
-  }
-
-  const pdfPayload = Object.assign({}, payload || {}, {
-    recipientEmail: email
-  });
-
-  return gatewayCall_('PDF_CREATE', pdfPayload);
+  if (!email) throw new Error('Akun Google pengguna tidak teridentifikasi. PDF tidak dapat dikirim ke akun user.');
+  return gatewayCall_('PDF_CREATE', Object.assign({}, payload || {}, {recipientEmail: email}));
 }
 
-/** Read-only helper yang saat ini dipakai Agenda Guru untuk sheet KELAS. */
 function readSheetViaGateway(sheet) {
-  return gatewayCall_('SPREADSHEET_READ', { sheet: sheet });
+  return gatewayCall_('SPREADSHEET_READ', {sheet: sheet});
 }
