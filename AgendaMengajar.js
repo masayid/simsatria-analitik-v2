@@ -24,6 +24,19 @@ function getAgendaUser_() {
   return session.data.user;
 }
 
+/**
+ * Memastikan TRX_AGENDA_GURU tersedia di spreadsheet sekolah aktif.
+ * Tidak membuat file baru; hanya membuat sheet di spreadsheet sekolah
+ * melalui Write Gateway pada saat agenda pertama kali disimpan.
+ */
+function ensureAgendaMengajarSheet_() {
+  const result = gatewayCall_('SPREADSHEET_ENSURE_SHEET', {
+    sheet: AGENDA_MENGAJAR_SHEET,
+    headers: AGENDA_MENGAJAR_COLUMNS
+  });
+  return result && result.data ? result.data : result;
+}
+
 function simpanAgendaMengajar(data) {
   requirePermission_(APP_CONFIG.PERMISSION.INPUT, AGENDA_MENGAJAR_MENU);
   data = data || {};
@@ -35,9 +48,14 @@ function simpanAgendaMengajar(data) {
   if (!tujuan) throw new Error('Tujuan pembelajaran wajib diisi.');
   if (!materi) throw new Error('Materi pembelajaran wajib diisi.');
   const user = getAgendaUser_();
+
+  // Setup otomatis: jika sheet belum ada maka Gateway membuatnya
+  // menggunakan struktur agenda yang sudah menjadi standar modul ini.
+  const setup = ensureAgendaMengajarSheet_();
+
   const row = [new Date(),clean_(user.idUser || user.id_user),clean_(user.nama),tanggal,sesi,kelas,tujuan,materi,dpl,pengalaman,prinsip,rekapTidakMasuk,buktiFisik];
   const result = saveDataViaGateway(AGENDA_MENGAJAR_MENU, AGENDA_MENGAJAR_SHEET, row);
-  return ok_({idUser:clean_(user.idUser || user.id_user),nama:clean_(user.nama),tanggal,sesi,kelas,buktiFisik,columns:AGENDA_MENGAJAR_COLUMNS,sheet:AGENDA_MENGAJAR_SHEET,gateway:result},'Agenda mengajar berhasil disimpan.');
+  return ok_({idUser:clean_(user.idUser || user.id_user),nama:clean_(user.nama),tanggal,sesi,kelas,buktiFisik,columns:AGENDA_MENGAJAR_COLUMNS,sheet:AGENDA_MENGAJAR_SHEET,setup:setup,gateway:result},'Agenda mengajar berhasil disimpan.');
 }
 
 function simpanBuktiFisikAgendaMengajar(file) {
@@ -133,7 +151,7 @@ function cetakAgendaMengajarPdf(tanggalAwal,tanggalAkhir){
 }
 
 function buildAgendaPdfHtml_(namaSekolah,namaGuru,start,end,rows){
-  const esc=function(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');};
+  const esc=function(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\"/g,'&quot;').replace(/'/g,'&#039;');};
   const body=rows.map(function(r,i){return '<tr><td>'+(i+1)+'</td><td>'+esc(r.tanggal)+'</td><td>'+esc(r.sesi)+'</td><td>'+esc(r.kelas)+'</td><td>'+esc(r.tujuan_pembelajaran)+'</td><td>'+esc(r.materi_pembelajaran)+'</td><td>'+esc(r.dpl)+'</td><td>'+esc(r.pengalaman_belajar)+'</td><td>'+esc(r.prinsip_pembelajaran)+'</td><td>'+esc(r.rekap_siswa_tidak_masuk)+'</td></tr>';}).join('');
   return '<!doctype html><html><head><meta charset="UTF-8"><style>@page{size:A4 landscape;margin:10mm}body{font-family:Arial,sans-serif;color:#183b30;font-size:9px}h1{font-size:18px;margin:0 0 3px}h2{font-size:12px;margin:0 0 8px;font-weight:400}p{margin:3px 0 8px}table{width:100%;border-collapse:collapse;table-layout:fixed}th,td{border:1px solid #b8c9c0;padding:4px;vertical-align:top;word-wrap:break-word}th{background:#e8f2ed;font-weight:700}th:nth-child(1){width:3%}th:nth-child(2){width:6%}th:nth-child(3){width:8%}th:nth-child(4){width:6%}th:nth-child(5){width:16%}th:nth-child(6){width:14%}th:nth-child(7){width:12%}th:nth-child(8){width:10%}th:nth-child(9){width:10%}th:nth-child(10){width:10%}.footer{margin-top:8px;font-size:8px}</style></head><body><h1>'+esc(namaSekolah)+'</h1><h2>AGENDA MENGAJAR GURU</h2><p><b>Guru:</b> '+esc(namaGuru)+' &nbsp; | &nbsp; <b>Periode:</b> '+esc(start)+' s.d. '+esc(end)+' &nbsp; | &nbsp; <b>Total:</b> '+rows.length+'</p><table><thead><tr><th>No</th><th>Tanggal</th><th>Jam ke-</th><th>Kelas</th><th>Tujuan Pembelajaran</th><th>Materi Pembelajaran</th><th>DPL</th><th>Pengalaman</th><th>Prinsip</th><th>Siswa Tidak Masuk</th></tr></thead><tbody>'+body+'</tbody></table><div class="footer">Dicetak melalui SIM SATRIA.</div></body></html>';
 }
