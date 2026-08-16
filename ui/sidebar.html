@@ -14,7 +14,6 @@
     </button>
   </div>
 
-  <!-- ADMINISTRASI SEKOLAH: satu level, satu panel aktif -->
   <div id="schoolAdminSection" style="display:none; margin-top:18px;">
     <div class="nav-title">ADMINISTRASI SEKOLAH</div>
 
@@ -45,16 +44,15 @@
 </nav>
 
 <style id="satriaSidebarWidthFix">
-/* Lebar sidebar diperbesar sedikit agar label MASTER_MENU tidak cepat terpotong. */
-aside#sidebar{width:235px!important;flex:0 0 235px!important;padding:18px!important}
+/* Sidebar sedikit diperlebar agar nama menu MASTER_MENU lebih nyaman dibaca. */
+aside#sidebar{width:245px!important;flex:0 0 245px!important;padding:18px!important}
 #sidebar .sidebar-nav{width:100%;min-width:0}
 #sidebar .nav-item{width:100%;min-width:0}
 #sidebar .nav-item span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-@media(max-width:560px){aside#sidebar{width:175px!important;flex-basis:175px!important;padding:10px!important}}
+@media(max-width:560px){aside#sidebar{width:180px!important;flex-basis:180px!important;padding:10px!important}}
 </style>
 
 <script>
-/* Router tunggal untuk seluruh menu ADMINISTRASI SEKOLAH. */
 function routeAdminSchoolMenu_(menuCode){
   var code=String(menuCode||'').toUpperCase();
   if(!code)return;
