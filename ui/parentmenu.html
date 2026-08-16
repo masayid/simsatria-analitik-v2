@@ -18,11 +18,11 @@
   function order(m){var n=Number(m&&m.urutan);return Number.isFinite(n)?n:999999;}
   function key(s){return String(s||'').trim().toUpperCase();}
 
-  /*
-   * Isi kolom MASTER_MENU.icon menggunakan salah satu alias berikut.
-   * Alias diterjemahkan ke class CoreUI Icons cil-*.
-   * Emoji/teks lama tetap didukung sebagai fallback.
-   */
+  /* Menu berikut sudah memiliki blok khusus ADMINISTRASI SEKOLAH di sidebar. */
+  function isStaticSchoolAdminMenu_(m){
+    return /^ADMIN_(SEKOLAH|KEPALA_SEKOLAH|KELAS|GURU|KARYAWAN|SISWA)$/.test(code(m));
+  }
+
   var ICONS={
     HOME:'cil-home', DASHBOARD:'cil-speedometer', MENU:'cil-menu',
     PROGRAM:'cil-puzzle', PRIORITAS:'cil-bullseye',
@@ -46,9 +46,7 @@
     if(!raw)return ICONS.DEFAULT;
     var normalized=key(raw);
     if(ICONS[normalized])return ICONS[normalized];
-    /* Bila user langsung menulis cil-xxx, gunakan apa adanya. */
     if(/^cil-[a-z0-9-]+$/i.test(raw))return raw;
-    /* Emoji/teks lama tidak dihilangkan; gunakan puzzle sebagai fallback visual. */
     return ICONS.DEFAULT;
   }
 
@@ -62,7 +60,7 @@
     box.innerHTML='';
 
     var source=(Array.isArray(menus)?menus:[]).filter(function(m){
-      return code(m)!=='DASHBOARD' && String(m.aktif).toUpperCase()!=='FALSE';
+      return code(m)!=='DASHBOARD' && String(m.aktif).toUpperCase()!=='FALSE' && !isStaticSchoolAdminMenu_(m);
     });
 
     var byCode={},byName={},groups={};
@@ -102,26 +100,22 @@
       var w=document.createElement('div');
       w.className='nav-group';
       w.dataset.parent=key(label);
-
       var b=document.createElement('button');
       b.type='button';
       b.className='nav-item nav-parent';
       b.innerHTML=(parentMenu?iconHtml(parentMenu):'<i class="nav-icon cil-puzzle" aria-hidden="true"></i>')+
         '<span class="nav-label">'+escapeHtml(label)+'</span><span class="nav-chevron">▾</span>';
       b.setAttribute('aria-expanded','false');
-
       var ch=document.createElement('div');
       ch.className='nav-children';
       children.slice().sort(function(a,b){return order(a)-order(b);}).forEach(function(m){
         ch.appendChild(makeLeaf(m,true));
       });
-
       b.onclick=function(e){
         e.preventDefault();
         var open=w.classList.toggle('open');
         b.setAttribute('aria-expanded',open?'true':'false');
       };
-
       w.appendChild(b);
       w.appendChild(ch);
       return w;
@@ -143,7 +137,6 @@
       }
     });
 
-    /* Virtual parents: parent_id tidak mempunyai baris MASTER_MENU sendiri. */
     Object.keys(groups).sort(function(a,b){
       return order(groups[a][0])-order(groups[b][0]);
     }).forEach(function(p){
