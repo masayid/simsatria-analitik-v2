@@ -14,31 +14,31 @@
     </button>
   </div>
 
-  <!-- ADMINISTRASI SEKOLAH: semua menu sejajar, tanpa submenu -->
+  <!-- ADMINISTRASI SEKOLAH: satu level, satu panel aktif -->
   <div id="schoolAdminSection" style="display:none; margin-top:18px;">
     <div class="nav-title">ADMINISTRASI SEKOLAH</div>
 
-    <button id="schoolAdminNav" class="nav-item" data-menu="ADMIN_SEKOLAH" onclick="selectMenu('ADMIN_SEKOLAH')">
+    <button id="schoolAdminNav" class="nav-item" data-menu="ADMIN_SEKOLAH" onclick="routeAdminSchoolMenu_('ADMIN_SEKOLAH')">
       ⚙ <span>Admin Sekolah</span>
     </button>
 
-    <button id="schoolKepalaSekolahNav" class="nav-item" data-menu="ADMIN_KEPALA_SEKOLAH" onclick="loadAdminKepalaSekolah()">
+    <button id="schoolKepalaSekolahNav" class="nav-item" data-menu="ADMIN_KEPALA_SEKOLAH" onclick="routeAdminSchoolMenu_('ADMIN_KEPALA_SEKOLAH')">
       🏫 <span>Kepala Sekolah</span>
     </button>
 
-    <button id="schoolKelasNav" class="nav-item" data-menu="ADMIN_KELAS" onclick="selectMenu('ADMIN_KELAS')">
+    <button id="schoolKelasNav" class="nav-item" data-menu="ADMIN_KELAS" onclick="routeAdminSchoolMenu_('ADMIN_KELAS')">
       ▦ <span>Kelola Kelas</span>
     </button>
 
-    <button id="schoolGuruNav" class="nav-item" data-menu="ADMIN_GURU" onclick="selectMenu('ADMIN_GURU')">
+    <button id="schoolGuruNav" class="nav-item" data-menu="ADMIN_GURU" onclick="routeAdminSchoolMenu_('ADMIN_GURU')">
       👩‍🏫 <span>Kelola Guru</span>
     </button>
 
-    <button id="schoolKaryawanNav" class="nav-item" data-menu="ADMIN_KARYAWAN" onclick="selectMenu('ADMIN_KARYAWAN')">
+    <button id="schoolKaryawanNav" class="nav-item" data-menu="ADMIN_KARYAWAN" onclick="routeAdminSchoolMenu_('ADMIN_KARYAWAN')">
       👥 <span>Kelola Karyawan</span>
     </button>
 
-    <button id="schoolSiswaNav" class="nav-item" data-menu="ADMIN_SISWA" onclick="loadAdminSiswa()">
+    <button id="schoolSiswaNav" class="nav-item" data-menu="ADMIN_SISWA" onclick="routeAdminSchoolMenu_('ADMIN_SISWA')">
       🎓 <span>Kelola Siswa</span>
     </button>
   </div>
