@@ -22,9 +22,9 @@ function gatewayRequireAction_(action, payload) {
 
   if (action === 'SPREADSHEET_ENSURE_SHEET') {
     const sheet = gatewayClean_(payload.sheet).toUpperCase();
-    const allowedCreate = ['KELAS','GURU','KARYAWAN','SISWA','KEPALA_SEKOLAH'];
+    const allowedCreate = ['KELAS','GURU','KARYAWAN','SISWA','KEPALA_SEKOLAH','TRX_AGENDA_GURU'];
     if (allowedCreate.indexOf(sheet) < 0) {
-      throw new Error('Gateway hanya mengizinkan pembuatan sheet KELAS, GURU, KARYAWAN, SISWA, atau KEPALA_SEKOLAH.');
+      throw new Error('Gateway hanya mengizinkan pembuatan sheet KELAS, GURU, KARYAWAN, SISWA, KEPALA_SEKOLAH, atau TRX_AGENDA_GURU.');
     }
     if (!Array.isArray(payload.headers) || !payload.headers.length) throw new Error('Header ' + sheet + ' wajib dikirim.');
     return;
