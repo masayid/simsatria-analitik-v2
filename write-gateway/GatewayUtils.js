@@ -3,6 +3,13 @@ function gatewayClean_(value) {
   return value === null || value === undefined ? '' : String(value).trim();
 }
 
+function gatewayExtractId_(value) {
+  const raw = gatewayClean_(value);
+  if (!raw) return '';
+  const match = raw.match(/\/d\/([A-Za-z0-9_-]+)/);
+  return match ? match[1] : raw;
+}
+
 function gatewayParse_(text) {
   try {
     return JSON.parse(text || '{}');
@@ -37,18 +44,23 @@ function gatewayRequire_(condition, message) {
  * findSchoolById_() milik project SIM SATRIA client.
  */
 function getSchoolConfig_(schoolId) {
-  const masterId = PropertiesService.getScriptProperties().getProperty(
+  const masterId = gatewayExtractId_(PropertiesService.getScriptProperties().getProperty(
     GATEWAY_CONFIG.PROP.MASTER_SPREADSHEET_ID
-  );
+  ));
 
   gatewayRequire_(
     masterId,
     'MASTER_SPREADSHEET_ID belum dikonfigurasi pada Write Gateway.'
   );
 
-  const ss = SpreadsheetApp.openById(masterId);
-  const sheet = ss.getSheetByName('MASTER_SEKOLAH');
+  let ss;
+  try {
+    ss = SpreadsheetApp.openById(masterId);
+  } catch (e) {
+    throw new Error('Write Gateway tidak dapat membuka MASTER_SPREADSHEET_ID. Periksa ID dan akses Gateway owner. Detail: ' + (e && e.message ? e.message : String(e)));
+  }
 
+  const sheet = ss.getSheetByName('MASTER_SEKOLAH');
   gatewayRequire_(sheet, 'Sheet MASTER_SEKOLAH tidak ditemukan.');
 
   const values = sheet.getDataRange().getValues();
@@ -85,8 +97,8 @@ function getSchoolConfig_(schoolId) {
 
     gatewayRequire_(status === 'ACTIVE', 'Sekolah tidak ditemukan atau tidak ACTIVE.');
 
-    const spreadsheetId = gatewayClean_(row[idx.spreadsheet_id]);
-    const driveFolderId = gatewayClean_(row[idx.drive_folder_id]);
+    const spreadsheetId = gatewayExtractId_(row[idx.spreadsheet_id]);
+    const driveFolderId = gatewayExtractId_(row[idx.drive_folder_id]);
 
     gatewayRequire_(spreadsheetId, 'Spreadsheet sekolah belum dikonfigurasi.');
     gatewayRequire_(driveFolderId, 'Folder Drive sekolah belum dikonfigurasi.');
@@ -104,12 +116,40 @@ function getSchoolConfig_(schoolId) {
   throw new Error('Sekolah ' + target + ' tidak ditemukan di MASTER_SEKOLAH.');
 }
 
+/**
+ * Membuka spreadsheet sekolah sebagai owner Gateway.
+ * Jika ID tersimpan sebagai URL, gatewayExtractId_() sudah menormalkannya.
+ * Fallback melalui folder membantu kasus file berada pada folder yang telah
+ * dibagikan kepada Gateway owner.
+ */
 function gatewayGetSpreadsheet_(schoolId) {
-  return SpreadsheetApp.openById(getSchoolConfig_(schoolId).spreadsheetId);
+  const cfg = getSchoolConfig_(schoolId);
+  try {
+    return SpreadsheetApp.openById(cfg.spreadsheetId);
+  } catch (primaryError) {
+    try {
+      const folder = DriveApp.getFolderById(cfg.driveFolderId);
+      const files = folder.getFilesByType(MimeType.GOOGLE_SHEETS);
+      while (files.hasNext()) {
+        const file = files.next();
+        if (file.getId() === cfg.spreadsheetId) {
+          return SpreadsheetApp.open(file);
+        }
+      }
+    } catch (fallbackError) {
+      throw new Error('Spreadsheet sekolah ' + cfg.idSekolah + ' tidak dapat diakses oleh Gateway owner. Pastikan spreadsheet/folder sekolah dibagikan kepada akun pemilik Write Gateway. Detail: ' + (primaryError && primaryError.message ? primaryError.message : String(primaryError)));
+    }
+    throw new Error('Spreadsheet sekolah ' + cfg.idSekolah + ' dengan ID ' + cfg.spreadsheetId + ' tidak dapat diakses oleh Gateway owner. Pastikan ID benar dan spreadsheet/folder dibagikan kepada akun pemilik Write Gateway. Detail: ' + (primaryError && primaryError.message ? primaryError.message : String(primaryError)));
+  }
 }
 
 function gatewayGetFolder_(schoolId) {
-  return DriveApp.getFolderById(getSchoolConfig_(schoolId).driveFolderId);
+  const cfg = getSchoolConfig_(schoolId);
+  try {
+    return DriveApp.getFolderById(cfg.driveFolderId);
+  } catch (e) {
+    throw new Error('Folder Drive sekolah ' + cfg.idSekolah + ' tidak dapat diakses oleh Gateway owner. Pastikan folder dibagikan kepada akun pemilik Write Gateway. Detail: ' + (e && e.message ? e.message : String(e)));
+  }
 }
 
 function gatewayNormalizeRow_(row) {
