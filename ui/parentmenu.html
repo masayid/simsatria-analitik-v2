@@ -2,41 +2,149 @@
 (function installParentMenuRenderer_(){
   function v(m,k){return String(m&&m[k]!=null?m[k]:'').trim();}
   function code(m){return v(m,'kode_menu').toUpperCase();}
+  function name(m){return v(m,'nama_menu');}
   function parent(m){return v(m,'parent_id').toUpperCase();}
   function order(m){var n=Number(m&&m.urutan);return Number.isFinite(n)?n:999999;}
+  function key(s){return String(s||'').trim().toUpperCase();}
+
   window.renderMenus=function(menus){
     var box=document.getElementById('dynamicMenus');
     if(!box)return;
     box.innerHTML='';
-    var source=(Array.isArray(menus)?menus:[]).filter(function(m){return code(m)!=='DASHBOARD';});
-    var byParent={};
-    source.forEach(function(m){var p=parent(m);if(!byParent[p])byParent[p]=[];byParent[p].push(m);});
-    Object.keys(byParent).forEach(function(p){byParent[p].sort(function(a,b){return order(a)-order(b);});});
+
+    var source=(Array.isArray(menus)?menus:[]).filter(function(m){
+      return code(m)!=='DASHBOARD' && String(m.aktif).toUpperCase()!=='FALSE';
+    });
+
+    /*
+     * MASTER_MENU mendukung parent_id berupa KODE_MENU maupun NAMA_MENU.
+     * Contoh data saat ini:
+     *   SBI -> parent_id = "Program Prioritas"
+     *   AGENDA_GURU -> parent_id = "Satria Mengajar"
+     * Karena induknya belum wajib mempunyai baris sendiri, kita bentuk
+     * virtual parent/group dari nilai parent_id tersebut.
+     */
+    var byCode={},byName={},groups={};
+    source.forEach(function(m){
+      byCode[code(m)]=m;
+      byName[key(name(m))]=m;
+    });
+
+    source.forEach(function(m){
+      var p=parent(m);
+      if(p){
+        if(!groups[p])groups[p]=[];
+        groups[p].push(m);
+      }
+    });
+    Object.keys(groups).forEach(function(p){
+      groups[p].sort(function(a,b){return order(a)-order(b);});
+    });
+
     var rendered={};
-    function leaf(m,child){
+
+    function makeLeaf(m){
       var c=code(m),b=document.createElement('button');
-      b.type='button';b.className='nav-item'+(child?' nav-child':'');b.dataset.menu=c;
-      b.innerHTML=escapeHtml(v(m,'icon')||'•')+' <span>'+escapeHtml(v(m,'nama_menu')||c)+'</span>';
+      b.type='button';
+      b.className='nav-item nav-child';
+      b.dataset.menu=c;
+      b.innerHTML=escapeHtml(v(m,'icon')||'•')+' <span>'+escapeHtml(name(m)||c)+'</span>';
       b.onclick=function(){selectMenu(c);};
-      var w=document.createElement('div');w.className='nav-leaf';w.appendChild(b);rendered[c]=true;return w;
+      rendered[c]=true;
+      var w=document.createElement('div');
+      w.className='nav-leaf';
+      w.appendChild(b);
+      return w;
     }
-    function group(m){
-      var c=code(m),children=(byParent[c]||[]).slice().sort(function(a,b){return order(a)-order(b);});
-      if(!children.length)return leaf(m,false);
-      var w=document.createElement('div');w.className='nav-group';w.dataset.menu=c;
-      var b=document.createElement('button');b.type='button';b.className='nav-item';b.dataset.menu=c;
-      b.innerHTML=escapeHtml(v(m,'icon')||'•')+' <span>'+escapeHtml(v(m,'nama_menu')||c)+'</span><span class="nav-chevron">▾</span>';
+
+    function makeGroup(label,children,parentMenu){
+      var w=document.createElement('div');
+      w.className='nav-group';
+      w.dataset.parent=key(label);
+
+      var b=document.createElement('button');
+      b.type='button';
+      b.className='nav-item nav-parent';
+      b.innerHTML=escapeHtml((parentMenu&&v(parentMenu,'icon'))||'•')+
+        ' <span>'+escapeHtml(label)+'</span><span class="nav-chevron">▾</span>';
       b.setAttribute('aria-expanded','false');
-      b.onclick=function(e){e.preventDefault();var open=w.classList.toggle('open');b.setAttribute('aria-expanded',open?'true':'false');};
-      w.appendChild(b);var ch=document.createElement('div');ch.className='nav-children';
-      children.forEach(function(x){ch.appendChild(leaf(x,true));});w.appendChild(ch);rendered[c]=true;return w;
+
+      var ch=document.createElement('div');
+      ch.className='nav-children';
+      children.slice().sort(function(a,b){return order(a)-order(b);}).forEach(function(m){
+        ch.appendChild(makeLeaf(m));
+      });
+
+      b.onclick=function(e){
+        e.preventDefault();
+        var open=w.classList.toggle('open');
+        b.setAttribute('aria-expanded',open?'true':'false');
+      };
+
+      w.appendChild(b);
+      w.appendChild(ch);
+      return w;
     }
-    (byParent['']||[]).slice().sort(function(a,b){return order(a)-order(b);}).forEach(function(m){box.appendChild(group(m));});
-    source.filter(function(m){return !rendered[code(m)]&&!parent(m);}).sort(function(a,b){return order(a)-order(b);}).forEach(function(m){box.appendChild(group(m));});
-    source.filter(function(m){return !rendered[code(m)];}).sort(function(a,b){return order(a)-order(b);}).forEach(function(m){box.appendChild(leaf(m,true));});
+
+    /*
+     * 1. Menu tanpa parent tetap menjadi menu level utama.
+     * 2. Menu ber-parent dikelompokkan berdasarkan parent_id.
+     * 3. Jika parent_id menunjuk kode menu yang memang ada, nama induk
+     *    diambil dari baris tersebut.
+     * 4. Jika parent_id hanya berisi nama seperti "Program Prioritas",
+     *    nama tersebut langsung menjadi induk virtual.
+     */
+    var roots=source.filter(function(m){return !parent(m);})
+      .sort(function(a,b){return order(a)-order(b);});
+
+    roots.forEach(function(m){
+      var c=code(m);
+      var children=groups[c]||[];
+      var childrenByName=groups[key(name(m))]||[];
+      if(children.length || childrenByName.length){
+        var all=children.length?children:childrenByName;
+        box.appendChild(makeGroup(name(m)||c,all,m));
+        rendered[c]=true;
+      }else{
+        var w=document.createElement('div');
+        w.className='nav-leaf';
+        var b=document.createElement('button');
+        b.type='button';b.className='nav-item';b.dataset.menu=c;
+        b.innerHTML=escapeHtml(v(m,'icon')||'•')+' <span>'+escapeHtml(name(m)||c)+'</span>';
+        b.onclick=function(){selectMenu(c);};
+        w.appendChild(b);box.appendChild(w);rendered[c]=true;
+      }
+    });
+
+    /* Virtual parents: parent_id tidak mempunyai baris MASTER_MENU sendiri. */
+    Object.keys(groups).sort(function(a,b){
+      return order(groups[a][0])-order(groups[b][0]);
+    }).forEach(function(p){
+      var parentMenu=byCode[p]||byName[p]||null;
+      var label=parentMenu?name(parentMenu):p;
+      var children=groups[p].filter(function(m){return !rendered[code(m)];});
+      if(!children.length)return;
+      box.appendChild(makeGroup(label,children,parentMenu));
+    });
+
+    /* Fallback aman untuk data yatim agar menu tidak hilang. */
+    source.filter(function(m){return !rendered[code(m)];})
+      .sort(function(a,b){return order(a)-order(b);})
+      .forEach(function(m){box.appendChild(makeLeaf(m));});
+
     if(!document.getElementById('satriaParentMenuStyle')){
-      var s=document.createElement('style');s.id='satriaParentMenuStyle';
-      s.textContent='.nav-group{margin:0}.nav-group>.nav-item{width:100%;display:flex;align-items:center}.nav-group>.nav-item .nav-chevron{margin-left:auto;font-size:11px;transition:transform .18s ease}.nav-group.open>.nav-item .nav-chevron{transform:rotate(180deg)}.nav-children{display:none;margin:2px 0 6px 13px;padding-left:9px;border-left:1px solid rgba(46,125,50,.22)}.nav-group.open>.nav-children{display:block}.nav-child{font-size:.92em!important;min-height:38px!important;padding-left:13px!important}.nav-leaf{margin:0}.nav-child:hover,.nav-group>.nav-item:hover{filter:brightness(.98)}';
+      var s=document.createElement('style');
+      s.id='satriaParentMenuStyle';
+      s.textContent=
+        '.nav-group{margin:0}'+
+        '.nav-parent{width:100%;display:flex;align-items:center;font-weight:600}'+
+        '.nav-parent .nav-chevron{margin-left:auto;font-size:11px;transition:transform .18s ease}'+
+        '.nav-group.open>.nav-parent .nav-chevron{transform:rotate(180deg)}'+
+        '.nav-children{display:none;margin:2px 0 6px 13px;padding-left:9px;border-left:1px solid rgba(46,125,50,.22)}'+
+        '.nav-group.open>.nav-children{display:block}'+
+        '.nav-child{font-size:.92em!important;min-height:38px!important;padding-left:13px!important}'+
+        '.nav-leaf{margin:0}'+
+        '.nav-child:hover,.nav-parent:hover{filter:brightness(.98)}';
       document.head.appendChild(s);
     }
   };
