@@ -7,6 +7,38 @@
   function order(m){var n=Number(m&&m.urutan);return Number.isFinite(n)?n:999999;}
   function key(s){return String(s||'').trim().toUpperCase();}
 
+  /*
+   * Icon dapat diisi langsung dengan emoji maupun nama alias.
+   * Contoh: HOME, SCHOOL, BOOK, USERS, TEACHER, STUDENT, WORK, etc.
+   * Emoji tetap didukung sehingga isi kolom icon dapat langsung berupa
+   * karakter seperti 🏠, 🏫, 📚, 👨‍🏫, 👥, dan sebagainya.
+   */
+  var ICONS={
+    HOME:'⌂', DASHBOARD:'⌂', MENU:'☰',
+    SCHOOL:'🏫', SEKOLAH:'🏫', ADMIN:'⚙', ADMINISTRASI:'⚙',
+    PROGRAM:'🎯', PRIORITAS:'🎯',
+    SBI:'🛡️', INTEGRITAS:'🛡️', MANTAP:'⭐', LITERASI:'📚', NUMERASI:'🔢',
+    SMSS:'📊',
+    TEACHER:'👨‍🏫', GURU:'👨‍🏫', MENGAJAR:'📖', AGENDA:'🗓️',
+    KARYAWAN:'👥', WORK:'💼', KERJA:'💼', MONITORING:'📋',
+    STUDENT:'🎓', SISWA:'🎓', MURID:'🎓', PRESENSI:'📝', ABSEN:'📝',
+    KELAS:'🏷️', KEPALA:'👔', KEPALA_SEKOLAH:'👔',
+    DATA:'🗂️', DATABASE:'🗄️', LAPORAN:'📑', CETAK:'🖨️', PDF:'📄',
+    SETTINGS:'⚙️', SETTING:'⚙️', PENGATURAN:'⚙️',
+    USER:'👤', USERS:'👥', ROLE:'🔐', PERMISSION:'🔑',
+    UPLOAD:'📤', DOWNLOAD:'📥', REFRESH:'🔄', SEARCH:'🔎',
+    CALENDAR:'📅', CLOCK:'🕒', PHOTO:'🖼️', FILE:'📄', FOLDER:'📁',
+    HOMEWORK:'📝', TARGET:'🎯', REPORT:'📊',
+    DEFAULT:'•'
+  };
+
+  function iconValue(m){
+    var raw=v(m,'icon');
+    if(!raw)return ICONS.DEFAULT;
+    var alias=ICONS[key(raw)];
+    return alias||raw;
+  }
+
   window.renderMenus=function(menus){
     var box=document.getElementById('dynamicMenus');
     if(!box)return;
@@ -16,14 +48,6 @@
       return code(m)!=='DASHBOARD' && String(m.aktif).toUpperCase()!=='FALSE';
     });
 
-    /*
-     * MASTER_MENU mendukung parent_id berupa KODE_MENU maupun NAMA_MENU.
-     * Contoh data saat ini:
-     *   SBI -> parent_id = "Program Prioritas"
-     *   AGENDA_GURU -> parent_id = "Satria Mengajar"
-     * Karena induknya belum wajib mempunyai baris sendiri, kita bentuk
-     * virtual parent/group dari nilai parent_id tersebut.
-     */
     var byCode={},byName={},groups={};
     source.forEach(function(m){
       byCode[code(m)]=m;
@@ -43,12 +67,12 @@
 
     var rendered={};
 
-    function makeLeaf(m){
+    function makeLeaf(m,isChild){
       var c=code(m),b=document.createElement('button');
       b.type='button';
-      b.className='nav-item nav-child';
+      b.className='nav-item'+(isChild?' nav-child':'');
       b.dataset.menu=c;
-      b.innerHTML=escapeHtml(v(m,'icon')||'•')+' <span>'+escapeHtml(name(m)||c)+'</span>';
+      b.innerHTML='<span class="nav-icon">'+escapeHtml(iconValue(m))+'</span> <span>'+escapeHtml(name(m)||c)+'</span>';
       b.onclick=function(){selectMenu(c);};
       rendered[c]=true;
       var w=document.createElement('div');
@@ -65,14 +89,14 @@
       var b=document.createElement('button');
       b.type='button';
       b.className='nav-item nav-parent';
-      b.innerHTML=escapeHtml((parentMenu&&v(parentMenu,'icon'))||'•')+
+      b.innerHTML='<span class="nav-icon">'+escapeHtml(parentMenu?iconValue(parentMenu):ICONS.DEFAULT)+'</span>'+ 
         ' <span>'+escapeHtml(label)+'</span><span class="nav-chevron">▾</span>';
       b.setAttribute('aria-expanded','false');
 
       var ch=document.createElement('div');
       ch.className='nav-children';
       children.slice().sort(function(a,b){return order(a)-order(b);}).forEach(function(m){
-        ch.appendChild(makeLeaf(m));
+        ch.appendChild(makeLeaf(m,true));
       });
 
       b.onclick=function(e){
@@ -86,14 +110,6 @@
       return w;
     }
 
-    /*
-     * 1. Menu tanpa parent tetap menjadi menu level utama.
-     * 2. Menu ber-parent dikelompokkan berdasarkan parent_id.
-     * 3. Jika parent_id menunjuk kode menu yang memang ada, nama induk
-     *    diambil dari baris tersebut.
-     * 4. Jika parent_id hanya berisi nama seperti "Program Prioritas",
-     *    nama tersebut langsung menjadi induk virtual.
-     */
     var roots=source.filter(function(m){return !parent(m);})
       .sort(function(a,b){return order(a)-order(b);});
 
@@ -106,13 +122,7 @@
         box.appendChild(makeGroup(name(m)||c,all,m));
         rendered[c]=true;
       }else{
-        var w=document.createElement('div');
-        w.className='nav-leaf';
-        var b=document.createElement('button');
-        b.type='button';b.className='nav-item';b.dataset.menu=c;
-        b.innerHTML=escapeHtml(v(m,'icon')||'•')+' <span>'+escapeHtml(name(m)||c)+'</span>';
-        b.onclick=function(){selectMenu(c);};
-        w.appendChild(b);box.appendChild(w);rendered[c]=true;
+        box.appendChild(makeLeaf(m,false));
       }
     });
 
@@ -127,17 +137,17 @@
       box.appendChild(makeGroup(label,children,parentMenu));
     });
 
-    /* Fallback aman untuk data yatim agar menu tidak hilang. */
     source.filter(function(m){return !rendered[code(m)];})
       .sort(function(a,b){return order(a)-order(b);})
-      .forEach(function(m){box.appendChild(makeLeaf(m));});
+      .forEach(function(m){box.appendChild(makeLeaf(m,true));});
 
     if(!document.getElementById('satriaParentMenuStyle')){
       var s=document.createElement('style');
       s.id='satriaParentMenuStyle';
       s.textContent=
         '.nav-group{margin:0}'+
-        '.nav-parent{width:100%;display:flex;align-items:center;font-weight:600}'+
+        '.nav-parent{width:100%;display:flex;align-items:center;font-weight:600;font-size:.90em!important;line-height:1.25;min-height:42px!important}'+
+        '.nav-parent .nav-icon,.nav-item .nav-icon{display:inline-flex;width:22px;min-width:22px;justify-content:center;align-items:center;line-height:1}'+
         '.nav-parent .nav-chevron{margin-left:auto;font-size:11px;transition:transform .18s ease}'+
         '.nav-group.open>.nav-parent .nav-chevron{transform:rotate(180deg)}'+
         '.nav-children{display:none;margin:2px 0 6px 13px;padding-left:9px;border-left:1px solid rgba(46,125,50,.22)}'+
