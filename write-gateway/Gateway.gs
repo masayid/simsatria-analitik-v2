@@ -1,4 +1,23 @@
-/** Entry point Write Gateway. Deployment ini dipisahkan dari aplikasi client. */
+/**
+ * Entry point Write Gateway.
+ *
+ * Deployment Gateway WAJIB:
+ * - Execute as: Me / owner project Gateway.
+ * - Who has access: Anyone with Google account (atau Anyone, sesuai
+ *   kebijakan deployment).
+ *
+ * Web App utama SIM SATRIA tetap boleh Execute as: User accessing the web app.
+ * Gateway berbeda: Gateway harus berjalan sebagai owner agar ADMIN_SEKOLAH
+ * tidak perlu memiliki akses langsung ke project Gateway.
+ */
+function doGet() {
+  return gatewayOk_({
+    service: 'SIM SATRIA WRITE GATEWAY',
+    status: 'READY',
+    timestamp: new Date().toISOString()
+  }, 'Write Gateway aktif.');
+}
+
 function doPost(e) {
   try {
     const payload = gatewayParse_(e && e.postData ? e.postData.contents : '{}');
