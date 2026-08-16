@@ -54,13 +54,33 @@ function gatewayLookupCurrentUser_() {
 function gatewayFetchJson_(cfg, body, label) {
   let res;
   try {
-    res = UrlFetchApp.fetch(cfg.url, {
+    const options = {
       method: 'post',
       contentType: 'application/json',
       payload: JSON.stringify(body),
       muteHttpExceptions: true,
       followRedirects: true
-    });
+    };
+
+    /*
+     * Web App utama berjalan sebagai user. Gateway dapat berada pada
+     * deployment yang membatasi akses ke akun Google yang terautentikasi.
+     * Kirim OAuth token user secara server-to-server agar Gateway tidak
+     * mengembalikan halaman login HTML. Token hanya berada pada request
+     * server dan tidak pernah dikirim ke frontend.
+     */
+    try {
+      const oauthToken = ScriptApp.getOAuthToken();
+      if (oauthToken) {
+        options.headers = {
+          Authorization: 'Bearer ' + oauthToken
+        };
+      }
+    } catch (authError) {
+      // Gateway yang bersifat publik tetap dapat dipanggil tanpa header OAuth.
+    }
+
+    res = UrlFetchApp.fetch(cfg.url, options);
   } catch (e) {
     throw new Error(
       'Gagal menghubungi ' + label + '. ' +
