@@ -9,14 +9,10 @@
  * Web App utama SIM SATRIA tetap boleh Execute as: User accessing the web app.
  * Gateway berbeda: Gateway harus berjalan sebagai owner agar ADMIN_SEKOLAH
  * tidak perlu memiliki akses langsung ke project Gateway.
+ *
+ * Gateway ini hanya melayani request POST dari Web App SIM SATRIA.
+ * Tidak ada doGet() agar URL Gateway tidak digunakan sebagai halaman aplikasi.
  */
-function doGet() {
-  return gatewayOk_({
-    service: 'SIM SATRIA WRITE GATEWAY',
-    status: 'READY',
-    timestamp: new Date().toISOString()
-  }, 'Write Gateway aktif.');
-}
 
 function doPost(e) {
   try {
