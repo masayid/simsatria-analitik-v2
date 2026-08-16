@@ -13,20 +13,25 @@
       <aside id="sidebar"><?!= include('ui/sidebar'); ?></aside>
       <main id="content">
         <?!= include('ui/loading'); ?>
-        <section id="welcome" class="card">
-          <div class="card-body">
-            <div class="eyebrow">SIM SATRIA MULTI SEKOLAH</div>
-            <h2 id="welcomeTitle">Memuat sesi...</h2>
-            <p id="sessionInfo">Mengidentifikasi akun dan role.</p>
-            <div id="schoolInfo" class="school-box"></div>
-          </div>
+
+        <!-- Konten berikut adalah DASHBOARD SAJA. Menu lain wajib menyembunyikannya. -->
+        <section id="dashboardHome">
+          <section id="welcome" class="card">
+            <div class="card-body">
+              <div class="eyebrow">SIM SATRIA MULTI SEKOLAH</div>
+              <h2 id="welcomeTitle">Memuat sesi...</h2>
+              <p id="sessionInfo">Mengidentifikasi akun dan role.</p>
+              <div id="schoolInfo" class="school-box"></div>
+            </div>
+          </section>
+          <section class="card" id="permissionSection">
+            <div class="card-body">
+              <h5>Akses Aplikasi</h5>
+              <div id="permissionGrid" class="permission-grid"></div>
+            </div>
+          </section>
         </section>
-        <section class="card" id="permissionSection">
-          <div class="card-body">
-            <h5>Akses Aplikasi</h5>
-            <div id="permissionGrid" class="permission-grid"></div>
-          </div>
-        </section>
+
         <?!= include('ui/masteradmin'); ?>
         <?!= include('ui/adminsekolah'); ?>
         <?!= include('ui/kepalaSekolah'); ?>
@@ -48,13 +53,47 @@
       window.SATRIA_SESSION = (typeof SATRIA_SESSION !== 'undefined') ? SATRIA_SESSION : null;
     }
 
+    /*
+     * Dashboard guard.
+     * Semua isi dashboard berada di #dashboardHome sehingga satu aturan
+     * dapat memastikan dashboard tidak ikut tampil pada menu lain.
+     */
+    (function installDashboardOnlyGuard_(){
+      function setDashboardVisible_(visible){
+        var dashboard=document.getElementById('dashboardHome');
+        if(dashboard)dashboard.style.display=visible?'':'none';
+      }
+
+      var originalSelectMenu=window.selectMenu;
+      if(typeof originalSelectMenu==='function'){
+        window.selectMenu=function(menuCode){
+          var code=String(menuCode||'').toUpperCase();
+          setDashboardVisible_(code==='DASHBOARD');
+          return originalSelectMenu.apply(this,arguments);
+        };
+      }
+
+      var originalLoadDashboard=window.loadDashboard;
+      if(typeof originalLoadDashboard==='function'){
+        window.loadDashboard=function(){
+          setDashboardVisible_(true);
+          return originalLoadDashboard.apply(this,arguments);
+        };
+      }
+
+      /* Default saat aplikasi pertama dibuka = Dashboard. */
+      setDashboardVisible_(true);
+    })();
+
     (function bindAdminSiswaPageGuard_(){
       var originalLoad = window.loadAdminSiswa;
       if (typeof originalLoad !== 'function') return;
       window.loadAdminSiswa = function(){
+        var dashboard = document.getElementById('dashboardHome');
         var welcome = document.getElementById('welcome');
         var permission = document.getElementById('permissionSection');
         var master = document.getElementById('masterAdminPanel');
+        if (dashboard) dashboard.style.display = 'none';
         if (welcome) welcome.style.display = 'none';
         if (permission) permission.style.display = 'none';
         if (master) master.style.display = 'none';
