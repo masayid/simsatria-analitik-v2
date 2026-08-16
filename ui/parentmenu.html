@@ -1,5 +1,16 @@
 <script>
 (function installParentMenuRenderer_(){
+  /* CoreUI Icons dipakai sebagai sistem ikon sidebar. */
+  function ensureCoreUIIcons_(){
+    if(document.getElementById('satriaCoreUIIcons'))return;
+    var link=document.createElement('link');
+    link.id='satriaCoreUIIcons';
+    link.rel='stylesheet';
+    link.href='https://cdn.jsdelivr.net/npm/@coreui/icons/css/all.min.css';
+    document.head.appendChild(link);
+  }
+  ensureCoreUIIcons_();
+
   function v(m,k){return String(m&&m[k]!=null?m[k]:'').trim();}
   function code(m){return v(m,'kode_menu').toUpperCase();}
   function name(m){return v(m,'nama_menu');}
@@ -8,35 +19,41 @@
   function key(s){return String(s||'').trim().toUpperCase();}
 
   /*
-   * Icon dapat diisi langsung dengan emoji maupun nama alias.
-   * Contoh: HOME, SCHOOL, BOOK, USERS, TEACHER, STUDENT, WORK, etc.
-   * Emoji tetap didukung sehingga isi kolom icon dapat langsung berupa
-   * karakter seperti 🏠, 🏫, 📚, 👨‍🏫, 👥, dan sebagainya.
+   * Isi kolom MASTER_MENU.icon menggunakan salah satu alias berikut.
+   * Alias diterjemahkan ke class CoreUI Icons cil-*.
+   * Emoji/teks lama tetap didukung sebagai fallback.
    */
   var ICONS={
-    HOME:'⌂', DASHBOARD:'⌂', MENU:'☰',
-    SCHOOL:'🏫', SEKOLAH:'🏫', ADMIN:'⚙', ADMINISTRASI:'⚙',
-    PROGRAM:'🎯', PRIORITAS:'🎯',
-    SBI:'🛡️', INTEGRITAS:'🛡️', MANTAP:'⭐', LITERASI:'📚', NUMERASI:'🔢',
-    SMSS:'📊',
-    TEACHER:'👨‍🏫', GURU:'👨‍🏫', MENGAJAR:'📖', AGENDA:'🗓️',
-    KARYAWAN:'👥', WORK:'💼', KERJA:'💼', MONITORING:'📋',
-    STUDENT:'🎓', SISWA:'🎓', MURID:'🎓', PRESENSI:'📝', ABSEN:'📝',
-    KELAS:'🏷️', KEPALA:'👔', KEPALA_SEKOLAH:'👔',
-    DATA:'🗂️', DATABASE:'🗄️', LAPORAN:'📑', CETAK:'🖨️', PDF:'📄',
-    SETTINGS:'⚙️', SETTING:'⚙️', PENGATURAN:'⚙️',
-    USER:'👤', USERS:'👥', ROLE:'🔐', PERMISSION:'🔑',
-    UPLOAD:'📤', DOWNLOAD:'📥', REFRESH:'🔄', SEARCH:'🔎',
-    CALENDAR:'📅', CLOCK:'🕒', PHOTO:'🖼️', FILE:'📄', FOLDER:'📁',
-    HOMEWORK:'📝', TARGET:'🎯', REPORT:'📊',
-    DEFAULT:'•'
+    HOME:'cil-home', DASHBOARD:'cil-speedometer', MENU:'cil-menu',
+    PROGRAM:'cil-puzzle', PRIORITAS:'cil-bullseye',
+    SCHOOL:'cil-school', SEKOLAH:'cil-school', SBI:'cil-shield-alt', INTEGRITAS:'cil-shield-alt',
+    MANTAP:'cil-star', LITERASI:'cil-book', NUMERASI:'cil-calculator', SMSS:'cil-chart-line',
+    TEACHER:'cil-education', GURU:'cil-education', MENGAJAR:'cil-book', AGENDA:'cil-calendar',
+    KARYAWAN:'cil-people', WORK:'cil-briefcase', KERJA:'cil-briefcase', MONITORING:'cil-list',
+    STUDENT:'cil-user', SISWA:'cil-user', MURID:'cil-user', PRESENSI:'cil-check-circle', ABSEN:'cil-check-circle',
+    KELAS:'cil-layers', KEPALA:'cil-user', KEPALA_SEKOLAH:'cil-user',
+    DATA:'cil-data-transfer', DATABASE:'cil-storage', LAPORAN:'cil-notes', CETAK:'cil-print', PDF:'cil-file',
+    SETTINGS:'cil-settings', SETTING:'cil-settings', PENGATURAN:'cil-settings',
+    USER:'cil-user', USERS:'cil-people', ROLE:'cil-lock-locked', PERMISSION:'cil-key',
+    UPLOAD:'cil-cloud-upload', DOWNLOAD:'cil-cloud-download', REFRESH:'cil-reload', SEARCH:'cil-search',
+    CALENDAR:'cil-calendar', CLOCK:'cil-clock', PHOTO:'cil-image', FILE:'cil-file', FOLDER:'cil-folder',
+    HOMEWORK:'cil-notes', TARGET:'cil-bullseye', REPORT:'cil-chart-line',
+    DEFAULT:'cil-puzzle'
   };
 
-  function iconValue(m){
+  function iconClass(m){
     var raw=v(m,'icon');
     if(!raw)return ICONS.DEFAULT;
-    var alias=ICONS[key(raw)];
-    return alias||raw;
+    var normalized=key(raw);
+    if(ICONS[normalized])return ICONS[normalized];
+    /* Bila user langsung menulis cil-xxx, gunakan apa adanya. */
+    if(/^cil-[a-z0-9-]+$/i.test(raw))return raw;
+    /* Emoji/teks lama tidak dihilangkan; gunakan puzzle sebagai fallback visual. */
+    return ICONS.DEFAULT;
+  }
+
+  function iconHtml(m){
+    return '<i class="nav-icon '+escapeHtml(iconClass(m))+'" aria-hidden="true"></i>';
   }
 
   window.renderMenus=function(menus){
@@ -72,7 +89,7 @@
       b.type='button';
       b.className='nav-item'+(isChild?' nav-child':'');
       b.dataset.menu=c;
-      b.innerHTML='<span class="nav-icon">'+escapeHtml(iconValue(m))+'</span> <span>'+escapeHtml(name(m)||c)+'</span>';
+      b.innerHTML=iconHtml(m)+'<span class="nav-label">'+escapeHtml(name(m)||c)+'</span>';
       b.onclick=function(){selectMenu(c);};
       rendered[c]=true;
       var w=document.createElement('div');
@@ -89,8 +106,8 @@
       var b=document.createElement('button');
       b.type='button';
       b.className='nav-item nav-parent';
-      b.innerHTML='<span class="nav-icon">'+escapeHtml(parentMenu?iconValue(parentMenu):ICONS.DEFAULT)+'</span>'+ 
-        ' <span>'+escapeHtml(label)+'</span><span class="nav-chevron">▾</span>';
+      b.innerHTML=(parentMenu?iconHtml(parentMenu):'<i class="nav-icon cil-puzzle" aria-hidden="true"></i>')+
+        '<span class="nav-label">'+escapeHtml(label)+'</span><span class="nav-chevron">▾</span>';
       b.setAttribute('aria-expanded','false');
 
       var ch=document.createElement('div');
@@ -146,8 +163,10 @@
       s.id='satriaParentMenuStyle';
       s.textContent=
         '.nav-group{margin:0}'+
-        '.nav-parent{width:100%;display:flex;align-items:center;font-weight:600;font-size:.90em!important;line-height:1.25;min-height:42px!important}'+
-        '.nav-parent .nav-icon,.nav-item .nav-icon{display:inline-flex;width:22px;min-width:22px;justify-content:center;align-items:center;line-height:1}'+
+        '.nav-item{display:flex;align-items:center;gap:.65rem;text-align:left}'+
+        '.nav-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'+
+        '.nav-icon{width:1.15rem;min-width:1.15rem;text-align:center;font-size:1rem;line-height:1;display:inline-block}'+
+        '.nav-parent{width:100%;font-weight:600;font-size:.90em!important;line-height:1.25;min-height:42px!important}'+
         '.nav-parent .nav-chevron{margin-left:auto;font-size:11px;transition:transform .18s ease}'+
         '.nav-group.open>.nav-parent .nav-chevron{transform:rotate(180deg)}'+
         '.nav-children{display:none;margin:2px 0 6px 13px;padding-left:9px;border-left:1px solid rgba(46,125,50,.22)}'+
