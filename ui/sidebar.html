@@ -14,10 +14,32 @@
     </button>
   </div>
 
-  <div id="schoolAdminSectionStatic" style="display:none; margin-top:18px;">
+  <!-- ADMINISTRASI SEKOLAH: semua menu sejajar, tanpa submenu -->
+  <div id="schoolAdminSection" style="display:none; margin-top:18px;">
     <div class="nav-title">ADMINISTRASI SEKOLAH</div>
+
+    <button id="schoolAdminNav" class="nav-item" data-menu="ADMIN_SEKOLAH" onclick="selectMenu('ADMIN_SEKOLAH')">
+      ⚙ <span>Admin Sekolah</span>
+    </button>
+
     <button id="schoolKepalaSekolahNav" class="nav-item" data-menu="ADMIN_KEPALA_SEKOLAH" onclick="loadAdminKepalaSekolah()">
       🏫 <span>Kepala Sekolah</span>
+    </button>
+
+    <button id="schoolKelasNav" class="nav-item" data-menu="ADMIN_KELAS" onclick="selectMenu('ADMIN_KELAS')">
+      ▦ <span>Kelola Kelas</span>
+    </button>
+
+    <button id="schoolGuruNav" class="nav-item" data-menu="ADMIN_GURU" onclick="selectMenu('ADMIN_GURU')">
+      👩‍🏫 <span>Kelola Guru</span>
+    </button>
+
+    <button id="schoolKaryawanNav" class="nav-item" data-menu="ADMIN_KARYAWAN" onclick="selectMenu('ADMIN_KARYAWAN')">
+      👥 <span>Kelola Karyawan</span>
+    </button>
+
+    <button id="schoolSiswaNav" class="nav-item" data-menu="ADMIN_SISWA" onclick="loadAdminSiswa()">
+      🎓 <span>Kelola Siswa</span>
     </button>
   </div>
 </nav>
