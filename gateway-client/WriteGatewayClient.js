@@ -51,6 +51,16 @@ function gatewayLookupCurrentUser_() {
   return data && data.data ? data.data : null;
 }
 
+/**
+ * Panggil Web App Gateway sebagai endpoint server-to-server.
+ *
+ * PENTING:
+ * Gateway SIM SATRIA menggunakan token aplikasi pada body request.
+ * Tidak menggunakan OAuth Bearer dari akun user di sini. Deployment
+ * Gateway memang harus tersedia sebagai Web App yang dapat menerima
+ * request server-to-server, lalu autentikasi/otorisasi dilakukan oleh
+ * GATEWAY_TOKEN + action + schoolId di sisi Gateway.
+ */
 function gatewayFetchJson_(cfg, body, label) {
   let res;
   try {
@@ -61,24 +71,6 @@ function gatewayFetchJson_(cfg, body, label) {
       muteHttpExceptions: true,
       followRedirects: true
     };
-
-    /*
-     * Web App utama berjalan sebagai user. Gateway dapat berada pada
-     * deployment yang membatasi akses ke akun Google yang terautentikasi.
-     * Kirim OAuth token user secara server-to-server agar Gateway tidak
-     * mengembalikan halaman login HTML. Token hanya berada pada request
-     * server dan tidak pernah dikirim ke frontend.
-     */
-    try {
-      const oauthToken = ScriptApp.getOAuthToken();
-      if (oauthToken) {
-        options.headers = {
-          Authorization: 'Bearer ' + oauthToken
-        };
-      }
-    } catch (authError) {
-      // Gateway yang bersifat publik tetap dapat dipanggil tanpa header OAuth.
-    }
 
     res = UrlFetchApp.fetch(cfg.url, options);
   } catch (e) {
